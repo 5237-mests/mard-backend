@@ -37,10 +37,18 @@ class UserController {
 
   public async listAllUsers(req: Request, res: Response): Promise<Response> {
     try {
+      console.log("Listing all users");
       const users = await this.userService.getAllUsers();
+      console.log("Listing all users:", users.length, "users found");
       return res.status(200).json(users);
     } catch (error) {
-      return res.status(500).json({ message: "Server error", error });
+      console.error("Error in listAllUsers:", error);
+      if (error instanceof Error) {
+        console.error("Error stack:", error.stack);
+      }
+      return res
+        .status(500)
+        .json({ message: "Server error *** from controller", error });
     }
   }
 }

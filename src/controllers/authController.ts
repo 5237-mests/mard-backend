@@ -17,7 +17,7 @@ class AuthController {
         email,
         phone,
         password,
-        role: "user",
+        role: req.body.role || "user",
       });
       await newUser.save();
       res.status(201).json({ message: "User registered successfully" });
@@ -31,6 +31,8 @@ class AuthController {
 
     try {
       console.log("Login attempt:", { email, password });
+      const users = await User.find({});
+      console.log("Total users in database:", users.length);
       const user = await User.findOne({ email });
       console.log("User found:", user ? user.email : null);
       if (!user) {

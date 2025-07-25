@@ -111,11 +111,3 @@ Dummy seed data can be created using a separate script or included in the initia
 ## License
 
 This project is licensed under the MIT License.
-
-echo "# mard-backend" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/5237-mests/mard-backend.git
-git push -u origin main

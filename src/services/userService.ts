@@ -18,7 +18,17 @@ export class UserService {
   }
 
   async getAllUsers() {
-    return await User.find();
+    console.log("Fetching all users from the database");
+    // Log the number of users in the database
+    const users = await User.find({});
+    console.log("Total users in database:", users.length);
+    // Return the list of users
+    console.log("Returning all users:", users);
+    if (users.length === 0) {
+      console.log("No users found in the database");
+      return [];
+    }
+    return users;
   }
 
   async getUserById(userId: string) {
