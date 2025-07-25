@@ -1,65 +1,93 @@
 import { Request, Response } from "express";
-import User from "../models/user";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import { sendEmail } from "../services/emailService";
+import { AuthService } from "../services/authService";
 import dotenv from "dotenv";
-
 dotenv.config();
 
 class AuthController {
-  async register(req: Request, res: Response) {
-    const { name, email, password, phone } = req.body;
-
+  async verifyEmail(req: Request, res: Response) {
+    const token = typeof req.query.token === "string" ? req.query.token : "";
+    const authService = new AuthService();
     try {
-      console.log("Registering user:", { name, email, password, phone });
-      const newUser = new User({
+      await authService.verifyEmail(token);
+      res.status(200).json({ message: "Email verified successfully" });
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({
+          message: error.message || "Invalid or expired verification token",
+        });
+    }
+  }
+
+  async register(req: Request, res: Response) {
+    const { name, email, password, phone, role } = req.body as {
+      name: string;
+      email: string;
+      password: string;
+      phone: string;
+      role?: string;
+    };
+    const authService = new AuthService();
+    try {
+      const jwtSecret = process.env.JWT_SECRET || "default_secret";
+      const verificationToken = require("jsonwebtoken").sign(
+        { email },
+        jwtSecret,
+        { expiresIn: "1d" }
+      );
+      const newUser = await authService.registerUser({
         name,
         email,
-        phone,
         password,
-        role: req.body.role || "user",
+        phone,
+        role,
+        verificationToken,
       });
-      await newUser.save();
-      res.status(201).json({ message: "User registered successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Error registering user", error });
+      // Send verification email
+      const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+      await sendEmail(
+        email,
+        "Verify your email",
+        `Please verify your email by clicking the following link: ${verifyUrl}`
+      );
+      res
+        .status(201)
+        .json({
+          message:
+            "User registered. Please check your email to verify your account.",
+        });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: error.message || "Error registering user" });
     }
   }
 
   async login(req: Request, res: Response) {
-    const { email, password } = req.body;
-
+    const { email, password } = req.body as { email: string; password: string };
+    const authService = new AuthService();
     try {
-      console.log("Login attempt:", { email, password });
-      const users = await User.find({});
-      console.log("Total users in database:", users.length);
-      const user = await User.findOne({ email });
-      console.log("User found:", user ? user.email : null);
-      if (!user) {
-        console.log("No user found for email:", email);
-        return res.status(401).json({ message: "Invalid credentials**email" });
-      }
-
-      console.log("Comparing passwords:", password, user.password);
-      const isMatch = await bcrypt.compare(password, user.password);
-      console.log("Password match:", isMatch);
-      if (!isMatch) {
-        console.log("Password mismatch for email:", email);
-        return res
-          .status(401)
-          .json({ message: "Invalid credentials**password" });
-      }
-
-      const token = jwt.sign(
-        { id: user._id, role: user.role },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "1h" }
+      const user = await authService.loginUser(email, password);
+      // Generate JWT
+      const token = require("jsonwebtoken").sign(
+        { id: user._id, email: user.email, role: user.role },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "7d" }
       );
-      console.log("JWT generated for:", email);
-      res.status(200).json({ token });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Error logging in", error });
+      res
+        .status(200)
+        .json({
+          token,
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          },
+        });
+    } catch (error: any) {
+      res.status(401).json({ message: error.message || "Error logging in" });
     }
   }
 
