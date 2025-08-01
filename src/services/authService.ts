@@ -14,7 +14,12 @@ export class AuthService {
   }) {
     const userRepository = AppDataSource.getRepository(User);
     const newUser = userRepository.create({
-      ...data,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      password: data.password,
+      role: (data.role as "admin" | "shopkeeper" | "storekeeper" | "user") || "user",
+      verificationToken: data.verificationToken,
       isVerified: false,
     });
     await userRepository.save(newUser);
@@ -33,7 +38,7 @@ export class AuthService {
     });
     if (!user) throw new Error("Invalid or expired verification token");
     user.isVerified = true;
-    user.verificationToken = null;
+    user.verificationToken = "";
     await userRepository.save(user);
     return user;
   }

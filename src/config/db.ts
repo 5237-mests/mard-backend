@@ -25,7 +25,7 @@ const connectDB = async () => {
     await AppDataSource.initialize();
     console.log(`MySQL Connected: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 };
