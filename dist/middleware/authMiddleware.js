@@ -3,63 +3,50 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isAuthenticated = isAuthenticated;
-exports.hasRole = hasRole;
+exports.authorizeUser = exports.authorizeRole = exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-function isAuthenticated(req, res, next) {
-    var _a;
-    const token = (_a = req.header("Authorization")) === null || _a === void 0 ? void 0 : _a.replace("Bearer ", "");
+require("../types"); // Import type extensions
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-        return res
-            .status(401)
-            .json({ message: "Access denied. No token provided." });
+        return res.status(401).json({ message: "Access token required" });
     }
-    try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+    jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "default_secret", (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: "Invalid or expired token" });
+        }
         req.user = decoded;
         next();
-    }
-    catch (error) {
-        res.status(400).json({ message: "Invalid token." });
-    }
-}
-function hasRole(role) {
+    });
+};
+exports.authenticateToken = authenticateToken;
+const authorizeRole = (roles) => {
     return (req, res, next) => {
         var _a;
-        const token = (_a = req.header("Authorization")) === null || _a === void 0 ? void 0 : _a.replace("Bearer ", "");
-        if (!token) {
-            return res
-                .status(401)
-                .json({ message: "Access denied. No token provided." });
+        const userRole = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role;
+        if (!userRole) {
+            return res.status(401).json({ message: "User not authenticated" });
         }
-        try {
-            const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-            if (decoded.role === role) {
-                req.user = decoded;
-                return next();
-            }
-            return res.status(403).json({ message: "Forbidden" });
+        if (!roles.includes(userRole)) {
+            return res.status(403).json({ message: "Access denied. Insufficient permissions." });
         }
-        catch (error) {
-            res.status(400).json({ message: "Invalid token." });
-        }
+        next();
     };
-}
-const authMiddleware = (req, res, next) => {
-    var _a;
-    const token = (_a = req.header("Authorization")) === null || _a === void 0 ? void 0 : _a.replace("Bearer ", "");
+};
+exports.authorizeRole = authorizeRole;
+const authorizeUser = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
-        return res
-            .status(401)
-            .json({ message: "Access denied. No token provided." });
+        return res.status(401).json({ message: "Access token required" });
     }
-    try {
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+    jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "default_secret", (err, decoded) => {
+        if (err) {
+            return res.status(403).json({ message: "Invalid or expired token" });
+        }
         req.user = decoded; // Attach user information to request object
         next();
-    }
-    catch (error) {
-        res.status(400).json({ message: "Invalid token." });
-    }
+    });
 };
-exports.default = authMiddleware;
+exports.authorizeUser = authorizeUser;
