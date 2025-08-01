@@ -5,6 +5,7 @@ const router = express.Router();
 
 // User registration route
 router.post("/register", AuthController.register);
+router.get("/verify-email", AuthController.verifyEmail);
 
 // User login route (returns JWT only)
 router.post("/login", AuthController.login);

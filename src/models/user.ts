@@ -7,6 +7,8 @@ export interface IUser extends Document {
   phone: string;
   password: string;
   role: "admin" | "shopkeeper" | "storekeeper" | "user";
+  isVerified?: boolean;
+  verificationToken?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -20,6 +22,8 @@ const UserSchema = new Schema<IUser>({
     enum: ["admin", "shopkeeper", "storekeeper", "user"],
     default: "user",
   },
+  isVerified: { type: Boolean, default: false },
+  verificationToken: { type: String },
 });
 
 // Hash password before saving
