@@ -1,8 +1,5 @@
-import { AppDataSource } from "../config/db";
-import ShopItem from "../models/ShopItem";
-import Sale from "../models/Sale";
-import Shop from "../models/Shop";
-import User from "../models/user";
+import { prisma } from "../config/db";
+import { ISaleItem } from "../types/prisma";
 
 export class ShopService {
   async processSale(
@@ -10,54 +7,60 @@ export class ShopService {
     items: { itemId: string; quantitySold: number }[],
     soldBy: string
   ) {
-    const shopItemRepository = AppDataSource.getRepository(ShopItem);
-    const saleRepository = AppDataSource.getRepository(Sale);
-    const shopRepository = AppDataSource.getRepository(Shop);
-    const userRepository = AppDataSource.getRepository(User);
-
-    // Update shop item quantities
-    for (const { itemId, quantitySold } of items) {
-      const shopItem = await shopItemRepository.findOne({
-        where: { shop: { id: parseInt(shopId) }, item: { id: parseInt(itemId) } }
-      });
-      if (shopItem) {
-        await shopItemRepository.update(
-          { shop: { id: parseInt(shopId) }, item: { id: parseInt(itemId) } },
-          { quantity: shopItem.quantity - quantitySold }
-        );
+    return await prisma.$transaction(async (tx) => {
+      // Update shop item quantities
+      for (const { itemId, quantitySold } of items) {
+        const shopItem = await tx.shopItem.findFirst({
+          where: { shopId: parseInt(shopId), itemId: parseInt(itemId) }
+        });
+        if (shopItem) {
+          await tx.shopItem.update({
+            where: { id: shopItem.id },
+            data: { quantity: shopItem.quantity - quantitySold }
+          });
+        }
       }
-    }
 
-    // Create sale record
-    const shop = await shopRepository.findOne({ where: { id: parseInt(shopId) } });
-    const seller = await userRepository.findOne({ where: { id: parseInt(soldBy) } });
-    
-    if (!shop || !seller) {
-      throw new Error("Shop or seller not found");
-    }
+      // Create sale record
+      const shop = await tx.shop.findUnique({ where: { id: parseInt(shopId) } });
+      const seller = await tx.user.findUnique({ where: { id: parseInt(soldBy) } });
+      
+      if (!shop || !seller) {
+        throw new Error("Shop or seller not found");
+      }
 
-    const saleItems = items.map(item => ({
-      itemId: parseInt(item.itemId),
-      quantitySold: item.quantitySold
-    }));
+      const saleItems: ISaleItem[] = items.map(item => ({
+        itemId: parseInt(item.itemId),
+        quantitySold: item.quantitySold
+      }));
 
-    return await saleRepository.save({ 
-      shop, 
-      items: saleItems, 
-      soldBy: seller 
+      return await tx.sale.create({
+        data: {
+          shopId: shop.id,
+          items: saleItems as any, // Cast to any to handle JSON type
+          soldById: seller.id,
+        },
+        include: {
+          shop: true,
+          soldBy: true,
+        },
+      });
     });
   }
 
   async getSales(filter: any, itemId?: string) {
-    const saleRepository = AppDataSource.getRepository(Sale);
-    let sales = await saleRepository.find({
-      relations: ["shop", "soldBy"]
+    let sales = await prisma.sale.findMany({
+      include: {
+        shop: true,
+        soldBy: true,
+      }
     });
     
     if (itemId) {
-      sales = sales.filter((sale) =>
-        sale.items.some((item) => item.itemId.toString() === itemId)
-      );
+      sales = sales.filter((sale) => {
+        const saleItems = sale.items as unknown as ISaleItem[];
+        return saleItems.some((item) => item.itemId.toString() === itemId);
+      });
     }
     return sales;
   }

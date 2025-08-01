@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { StoreItem as PrismaStoreItem } from "../types/prisma";
 import Store from "./Store";
 import Item from "./Item";
 
@@ -9,21 +9,6 @@ export interface IStoreItem {
   quantity: number;
 }
 
-@Entity("store_items")
-export class StoreItem implements IStoreItem {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @ManyToOne(() => Store)
-  @JoinColumn({ name: "store_id" })
-  store: Store;
-
-  @ManyToOne(() => Item)
-  @JoinColumn({ name: "item_id" })
-  item: Item;
-
-  @Column({ type: "int" })
-  quantity: number;
-}
-
+// Export Prisma StoreItem type as default
+export type StoreItem = PrismaStoreItem;
 export default StoreItem;

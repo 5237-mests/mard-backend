@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { Shop as PrismaShop } from "../types/prisma";
 import User from "./user";
 
 export interface IShop {
@@ -8,20 +8,6 @@ export interface IShop {
   shopkeeper?: User;
 }
 
-@Entity("shops")
-export class Shop implements IShop {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: "varchar", length: 255 })
-  name: string;
-
-  @Column({ type: "varchar", length: 255 })
-  location: string;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: "shopkeeper_id" })
-  shopkeeper: User;
-}
-
+// Export Prisma Shop type as default
+export type Shop = PrismaShop;
 export default Shop;

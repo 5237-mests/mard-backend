@@ -1,49 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { TransferRequest as PrismaTransferRequest, ITransferItem, TransferRequestStatus } from "../types/prisma";
 import User from "./user";
 
-export interface ITransferItem {
-  itemId: number;
-  quantity: number;
-}
+export { ITransferItem };
 
 export interface ITransferRequest {
   id: number;
   from: number;
   to: number;
   items: ITransferItem[];
-  status: "pending" | "approved" | "rejected";
+  status: TransferRequestStatus;
   requestedBy: User;
   approvedBy?: User;
 }
 
-@Entity("transfer_requests")
-export class TransferRequest implements ITransferRequest {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: "int" })
-  from: number;
-
-  @Column({ type: "int" })
-  to: number;
-
-  @Column("json")
-  items: ITransferItem[];
-
-  @Column({
-    type: "enum",
-    enum: ["pending", "approved", "rejected"],
-    default: "pending",
-  })
-  status: "pending" | "approved" | "rejected";
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: "requested_by_id" })
-  requestedBy: User;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: "approved_by_id" })
-  approvedBy: User;
-}
-
+// Export Prisma TransferRequest type as default
+export type TransferRequest = PrismaTransferRequest;
 export default TransferRequest;

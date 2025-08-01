@@ -39,7 +39,7 @@ class AuthController {
         email,
         password,
         phone,
-        role,
+        role: role as any, // Cast role to allow string conversion
         verificationToken,
       });
       // Send verification email
@@ -72,14 +72,14 @@ class AuthController {
       const user = await authService.loginUser(email, password);
       // Generate JWT
       const token = require("jsonwebtoken").sign(
-        { id: user._id, email: user.email, role: user.role },
+        { id: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET || "default_secret",
         { expiresIn: "7d" }
       );
       res.status(200).json({
         token,
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,

@@ -1,25 +1,22 @@
+import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 import express from "express";
-import authMiddleware from "../middleware/authMiddleware";
-import { roleMiddleware } from "../middleware/roleMiddleware";
-
 import { processSale, getSales } from "../controllers/shopController";
 
 const router = express.Router();
 
-// API for shopkeeper to update item quantities after a sale
-// Record a sale and update inventory
+// Route to process a sale (only shopkeeper or admin can do this)
 router.post(
   "/sale",
-  authMiddleware,
-  roleMiddleware(["shopkeeper"]),
+  authenticateToken,
+  authorizeRole(["SHOPKEEPER", "ADMIN"]),
   processSale
 );
 
-// Get all sales for a shop
+// Route to get sales data (only admin can do this)
 router.get(
   "/sales",
-  authMiddleware,
-  roleMiddleware(["shopkeeper", "admin"]),
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
   getSales
 );
 
