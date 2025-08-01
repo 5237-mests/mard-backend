@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
+import { AppDataSource } from "../config/db";
 import { TransferService } from "../services/transferService";
 import User from "../models/user";
 import { sendEmail } from "../services/emailService";
 import { sendNotification } from "../services/notificationService";
+
 export const listTransferRequests = async (req: Request, res: Response) => {
   const transferService = new TransferService();
   const filter: any = {};
@@ -18,19 +20,21 @@ export const listTransferRequests = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error listing transfer requests", error });
   }
 };
+
 export const adminTransfer = async (req: Request, res: Response) => {
   const adminId = req.user.id;
   const { fromId, toId, items } = req.body;
   const transferService = new TransferService();
   try {
     const transfer = await transferService.adminTransfer(
-      fromId,
-      toId,
+      parseInt(fromId),
+      parseInt(toId),
       items,
       adminId
     );
     // Email and in-app notification to receiver
-    const receiver = await User.findById(toId);
+    const userRepository = AppDataSource.getRepository(User);
+    const receiver = await userRepository.findOne({ where: { id: parseInt(toId) } });
     const message = `Transfer from ${fromId} to you has been completed. Items: ${JSON.stringify(
       items
     )}`;
@@ -42,7 +46,7 @@ export const adminTransfer = async (req: Request, res: Response) => {
       );
     }
     if (receiver) {
-      await sendNotification(receiver._id.toString(), message);
+      await sendNotification(receiver.id.toString(), message);
     }
     res
       .status(201)
@@ -59,8 +63,9 @@ export const requestStockTransfer = async (req: Request, res: Response) => {
   try {
     const transfer = await transferService.createTransferRequest(
       shopId,
-      toId,
-      items
+      parseInt(toId),
+      items,
+      shopId
     );
     res.status(201).json({ message: "Transfer request created", transfer });
   } catch (error) {
@@ -74,7 +79,7 @@ export const rejectTransferRequest = async (req: Request, res: Response) => {
   const transferService = new TransferService();
   try {
     const transfer = await transferService.rejectTransferRequest(
-      requestId,
+      parseInt(requestId),
       rejectorId
     );
     if (!transfer) {
@@ -94,7 +99,7 @@ export const approveTransferRequest = async (req: Request, res: Response) => {
   const transferService = new TransferService();
   try {
     const transfer = await transferService.approveTransferRequest(
-      requestId,
+      parseInt(requestId),
       approverId
     );
     if (!transfer) {

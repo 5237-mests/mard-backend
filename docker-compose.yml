@@ -6,23 +6,30 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/marddb
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+      - DB_DATABASE=marddb
       - JWT_SECRET=123
     depends_on:
-      - mongo
+      - mysql
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
 
     restart: unless-stopped
 
-  mongo:
-    image: mongo:6
-    container_name: mard_mongo
+  mysql:
+    image: mysql:8.0
+    container_name: mard_mysql
     ports:
-      - "27017:27017"
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=marddb
     volumes:
-      - mongo_data:/data/db
+      - mysql_data:/var/lib/mysql
 
 volumes:
-  mongo_data:
+  mysql_data:

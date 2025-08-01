@@ -1,7 +1,8 @@
-import mongoose, { Document, Schema } from "mongoose";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm";
 import bcrypt from "bcrypt";
 
-export interface IUser extends Document {
+export interface IUser {
+  id: number;
   name: string;
   email: string;
   phone: string;
@@ -12,30 +13,47 @@ export interface IUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const UserSchema = new Schema<IUser>({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true, maxLength: 1024 },
-  role: {
-    type: String,
+@Entity("users")
+export class User implements IUser {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: "varchar", length: 255 })
+  name: string;
+
+  @Column({ type: "varchar", length: 255, unique: true })
+  email: string;
+
+  @Column({ type: "varchar", length: 20 })
+  phone: string;
+
+  @Column({ type: "varchar", length: 1024 })
+  password: string;
+
+  @Column({
+    type: "enum",
     enum: ["admin", "shopkeeper", "storekeeper", "user"],
     default: "user",
-  },
-  isVerified: { type: Boolean, default: false },
-  verificationToken: { type: String },
-});
+  })
+  role: "admin" | "shopkeeper" | "storekeeper" | "user";
 
-// Hash password before saving
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
+  @Column({ type: "boolean", default: false })
+  isVerified: boolean;
 
-// Compare password method
-UserSchema.methods.comparePassword = function (candidatePassword: string) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+  @Column({ type: "varchar", length: 255, nullable: true })
+  verificationToken: string;
 
-export default mongoose.model<IUser>("User", UserSchema);
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    if (this.password && !this.password.startsWith('$2')) {
+      this.password = await bcrypt.hash(this.password, 10);
+    }
+  }
+
+  async comparePassword(candidatePassword: string): Promise<boolean> {
+    return bcrypt.compare(candidatePassword, this.password);
+  }
+}
+
+export default User;

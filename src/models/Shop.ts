@@ -1,11 +1,27 @@
-import mongoose, { Schema, Document } from "mongoose";
-export interface IShop extends Document {
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import User from "./user";
+
+export interface IShop {
+  id: number;
   name: string;
   location: string;
+  shopkeeper?: User;
 }
-const ShopSchema = new Schema<IShop>({
-  name: { type: String, required: true },
-  location: { type: String, required: true },
-  shopkeeper: { type: Schema.Types.ObjectId, ref: "User" },
-});
-export default mongoose.model<IShop>("Shop", ShopSchema);
+
+@Entity("shops")
+export class Shop implements IShop {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: "varchar", length: 255 })
+  name: string;
+
+  @Column({ type: "varchar", length: 255 })
+  location: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: "shopkeeper_id" })
+  shopkeeper: User;
+}
+
+export default Shop;

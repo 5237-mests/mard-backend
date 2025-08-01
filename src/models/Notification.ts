@@ -1,20 +1,31 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import User from "./user";
 
-export interface INotification extends Document {
-  user: Types.ObjectId;
+export interface INotification {
+  id: number;
+  user: User;
   message: string;
   read: boolean;
   createdAt: Date;
 }
 
-const NotificationSchema = new Schema<INotification>({
-  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  message: { type: String, required: true },
-  read: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-});
+@Entity("notifications")
+export class Notification implements INotification {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-export default mongoose.model<INotification>(
-  "Notification",
-  NotificationSchema
-);
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "user_id" })
+  user: User;
+
+  @Column({ type: "text" })
+  message: string;
+
+  @Column({ type: "boolean", default: false })
+  read: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+
+export default Notification;
