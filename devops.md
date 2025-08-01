@@ -1,4 +1,4 @@
-**Docker commands** and file setup you'll need to containerize your **MARD backend (Express + MongoDB + Mongoose)** app:
+**Docker commands** and file setup you'll need to containerize your **MARD backend (Express + MySQL + TypeORM)** app:
 
 ---
 
@@ -38,24 +38,31 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=mongodb://mongo:27017/marddb
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+      - DB_DATABASE=marddb
       - JWT_SECRET=your_jwt_secret
     depends_on:
-      - mongo
+      - mysql
     volumes:
       - .:/usr/src/app
     restart: unless-stopped
 
-  mongo:
-    image: mongo:6
-    container_name: mard_mongo
+  mysql:
+    image: mysql:8.0
+    container_name: mard_mysql
     ports:
-      - "27017:27017"
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=marddb
     volumes:
-      - mongo_data:/data/db
+      - mysql_data:/var/lib/mysql
 
 volumes:
-  mongo_data:
+  mysql_data:
 ```
 
 ---
@@ -64,7 +71,11 @@ volumes:
 
 ```
 PORT=5000
-MONGO_URI=mongodb://mongo:27017/marddb
+DB_HOST=mysql
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=password
+DB_DATABASE=marddb
 JWT_SECRET=your_jwt_secret
 ```
 
@@ -110,37 +121,38 @@ docker system prune
 
 ---
 
-## To connect **MongoDB Compass** to your MongoDB running inside Docker, follow these steps:
+## To connect **MySQL Workbench** to your MySQL running inside Docker, follow these steps:
 
 ---
 
-### ✅ Step 1: Make sure your Mongo container exposes the port
+### ✅ Step 1: Make sure your MySQL container exposes the port
 
 In your `docker-compose.yml`, you already have this:
 
 ```yaml
-mongo:
-  image: mongo:6
-  container_name: mard_mongo
+mysql:
+  image: mysql:8.0
+  container_name: mard_mysql
   ports:
-    - "27017:27017"
+    - "3306:3306"
 ```
 
-This exposes MongoDB on your **localhost:27017**, making it accessible to Compass.
+This exposes MySQL on your **localhost:3306**, making it accessible to MySQL Workbench.
 
 ---
 
-### ✅ Step 2: Open MongoDB Compass
+### ✅ Step 2: Open MySQL Workbench
 
-1. Launch **MongoDB Compass**.
+1. Launch **MySQL Workbench**.
 
-2. In the **Connection String** field, enter:
+2. Create a new connection with these settings:
+   - **Connection Name**: MARD Local
+   - **Hostname**: localhost
+   - **Port**: 3306
+   - **Username**: root
+   - **Password**: password
 
-   ```
-   mongodb://localhost:27017
-   ```
-
-3. Click **Connect**.
+3. Click **Test Connection** and then **OK**.
 
 ---
 
@@ -149,23 +161,23 @@ This exposes MongoDB on your **localhost:27017**, making it accessible to Compas
 If your app uses:
 
 ```env
-MONGO_URI=mongodb://mongo:27017/marddb
+DB_DATABASE=marddb
 ```
 
-Then in Compass, once connected:
+Then in MySQL Workbench, once connected:
 
-- You should see a database named `marddb`.
-- Inside it, you'll see collections once your app creates them (e.g., `users`, `projects`, etc.).
+- You should see a schema named `marddb`.
+- Inside it, you'll see tables once your app creates them (e.g., `users`, `items`, `shops`, etc.).
 
 ---
 
 ### ✅ Troubleshooting
 
-- If Compass can’t connect:
+- If MySQL Workbench can't connect:
 
   - Ensure Docker is running.
   - Check that `docker-compose up` is running.
-  - Run `docker ps` to confirm the `mongo` container is up.
-  - Try connecting to `127.0.0.1:27017` instead of `localhost`.
+  - Run `docker ps` to confirm the `mysql` container is up.
+  - Try connecting to `127.0.0.1:3306` instead of `localhost`.
 
-Let me know if you'd like to secure MongoDB with a username and password.
+Note: MySQL is already secured with username and password as configured in docker-compose.yml.

@@ -1,12 +1,29 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
-export interface IShopItem extends Document {
-  shopId: Types.ObjectId;
-  itemId: Types.ObjectId;
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import Shop from "./Shop";
+import Item from "./Item";
+
+export interface IShopItem {
+  id: number;
+  shop: Shop;
+  item: Item;
   quantity: number;
 }
-const ShopItemSchema = new Schema<IShopItem>({
-  shopId: { type: Schema.Types.ObjectId, ref: "Shop", required: true },
-  itemId: { type: Schema.Types.ObjectId, ref: "Item", required: true },
-  quantity: { type: Number, required: true },
-});
-export default mongoose.model<IShopItem>("ShopItem", ShopItemSchema);
+
+@Entity("shop_items")
+export class ShopItem implements IShopItem {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Shop)
+  @JoinColumn({ name: "shop_id" })
+  shop: Shop;
+
+  @ManyToOne(() => Item)
+  @JoinColumn({ name: "item_id" })
+  item: Item;
+
+  @Column({ type: "int" })
+  quantity: number;
+}
+
+export default ShopItem;

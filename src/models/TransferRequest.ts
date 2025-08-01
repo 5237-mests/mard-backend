@@ -1,34 +1,49 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import User from "./user";
+
 export interface ITransferItem {
-  itemId: Types.ObjectId;
+  itemId: number;
   quantity: number;
 }
-export interface ITransferRequest extends Document {
-  from: Types.ObjectId;
-  to: Types.ObjectId;
+
+export interface ITransferRequest {
+  id: number;
+  from: number;
+  to: number;
   items: ITransferItem[];
   status: "pending" | "approved" | "rejected";
-  requestedBy: Types.ObjectId;
-  approvedBy?: Types.ObjectId;
+  requestedBy: User;
+  approvedBy?: User;
 }
-const TransferRequestSchema = new Schema<ITransferRequest>({
-  from: { type: Schema.Types.ObjectId, required: true },
-  to: { type: Schema.Types.ObjectId, required: true },
-  items: [
-    {
-      itemId: { type: Schema.Types.ObjectId, ref: "Item", required: true },
-      quantity: { type: Number, required: true },
-    },
-  ],
-  status: {
-    type: String,
+
+@Entity("transfer_requests")
+export class TransferRequest implements ITransferRequest {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: "int" })
+  from: number;
+
+  @Column({ type: "int" })
+  to: number;
+
+  @Column("json")
+  items: ITransferItem[];
+
+  @Column({
+    type: "enum",
     enum: ["pending", "approved", "rejected"],
     default: "pending",
-  },
-  requestedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  approvedBy: { type: Schema.Types.ObjectId, ref: "User" },
-});
-export default mongoose.model<ITransferRequest>(
-  "TransferRequest",
-  TransferRequestSchema
-);
+  })
+  status: "pending" | "approved" | "rejected";
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "requested_by_id" })
+  requestedBy: User;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: "approved_by_id" })
+  approvedBy: User;
+}
+
+export default TransferRequest;

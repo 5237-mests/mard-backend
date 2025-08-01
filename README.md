@@ -2,7 +2,7 @@
 
 ## Overview
 
-MARD is a backend application built with Express.js and MongoDB, designed to manage user access and resources with role-based access control. This application allows users to register, log in, and manage their roles while ensuring secure access to resources.
+MARD is a backend application built with Express.js and MySQL, designed to manage user access and resources with role-based access control. This application allows users to register, log in, and manage their roles while ensuring secure access to resources.
 
 ## Features
 
@@ -15,8 +15,8 @@ MARD is a backend application built with Express.js and MongoDB, designed to man
 
 - Node.js
 - Express.js
-- MongoDB
-- Mongoose
+- MySQL
+- TypeORM
 - JWT (JSON Web Tokens)
 - TypeScript
 - CORS
@@ -66,10 +66,14 @@ MARD
    npm install
    ```
 
-3. Create a `.env` file in the root directory and add your MongoDB connection string:
+3. Create a `.env` file in the root directory and add your MySQL connection variables:
 
-   ```
-   MONGODB_URI=<your-mongodb-connection-string>
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=password
+DB_DATABASE=marddb
    JWT_SECRET=<your-jwt-secret>
    ```
 

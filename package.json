@@ -17,7 +17,9 @@
     "express": "^4.17.1",
     "helmet": "^4.6.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.10.9",
+    "mysql2": "^3.6.5",
+    "typeorm": "^0.3.17",
+    "reflect-metadata": "^0.1.13",
     "morgan": "^1.10.1",
     "nodemailer": "^7.0.5"
   },

@@ -1,27 +1,39 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import Shop from "./Shop";
+import User from "./user";
+import Item from "./Item";
 
 export interface ISaleItem {
-  itemId: Types.ObjectId;
+  itemId: number;
   quantitySold: number;
 }
 
-export interface ISale extends Document {
-  shopId: Types.ObjectId;
+export interface ISale {
+  id: number;
+  shop: Shop;
   items: ISaleItem[];
-  soldBy: Types.ObjectId;
+  soldBy: User;
   soldAt: Date;
 }
 
-const SaleSchema = new Schema<ISale>({
-  shopId: { type: Schema.Types.ObjectId, ref: "Shop", required: true },
-  items: [
-    {
-      itemId: { type: Schema.Types.ObjectId, ref: "Item", required: true },
-      quantitySold: { type: Number, required: true },
-    },
-  ],
-  soldBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  soldAt: { type: Date, default: Date.now },
-});
+@Entity("sales")
+export class Sale implements ISale {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-export default mongoose.model<ISale>("Sale", SaleSchema);
+  @ManyToOne(() => Shop)
+  @JoinColumn({ name: "shop_id" })
+  shop: Shop;
+
+  @Column("json")
+  items: ISaleItem[];
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: "sold_by_id" })
+  soldBy: User;
+
+  @CreateDateColumn()
+  soldAt: Date;
+}
+
+export default Sale;
