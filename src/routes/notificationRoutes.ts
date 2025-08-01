@@ -1,5 +1,5 @@
+import { authenticateToken } from "../middleware/authMiddleware";
 import express from "express";
-import authMiddleware from "../middleware/authMiddleware";
 import {
   listNotifications,
   markAsRead,
@@ -9,16 +9,16 @@ import {
 
 const router = express.Router();
 
-// List notifications for logged-in user
-router.get("/", authMiddleware, listNotifications);
+// Route to get all notifications for the authenticated user
+router.get("/", authenticateToken, listNotifications);
 
-// Mark notification as read
-router.post("/read", authMiddleware, markAsRead);
+// Route to mark a notification as read
+router.post("/read", authenticateToken, markAsRead);
 
-// Get unread notification count
-router.get("/unread-count", authMiddleware, unreadCount);
+// Route to get unread notification count
+router.get("/unread-count", authenticateToken, unreadCount);
 
-// Delete notification
-router.post("/delete", authMiddleware, deleteNotificationById);
+// Route to delete a notification
+router.post("/delete", authenticateToken, deleteNotificationById);
 
 export default router;

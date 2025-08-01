@@ -1,32 +1,31 @@
-import { Router } from "express";
+import express from "express";
+import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 import UserController from "../controllers/userController";
-import authMiddleware from "../middleware/authMiddleware";
-import { roleMiddleware } from "../middleware/roleMiddleware";
 
-const router = Router();
+const router = express.Router();
 const userController = new UserController();
 
-// Route to get user details
+// Route to get all users
 router.get(
-  "/me",
-  authMiddleware,
-  userController.getUserDetails.bind(userController)
+  "/all",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  userController.listAllUsers.bind(userController)
 );
 
-// Route to update user role (admin only)
+// Route to update a user's role (only admin can do this)
 router.put(
   "/role/:id",
-  authMiddleware,
-  roleMiddleware(["admin"]),
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
   userController.updateUserRole.bind(userController)
 );
 
-// Route to list all users (admin only)
+// Route to get current user information
 router.get(
-  "/",
-  authMiddleware,
-  roleMiddleware(["admin"]),
-  userController.listAllUsers.bind(userController)
+  "/me/:id",
+  authenticateToken,
+  userController.getUserDetails.bind(userController)
 );
 
 export default router;

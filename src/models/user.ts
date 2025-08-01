@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm";
 import bcrypt from "bcrypt";
+import { User as PrismaUser, Role } from "../types/prisma";
 
 export interface IUser {
   id: number;
@@ -7,53 +7,25 @@ export interface IUser {
   email: string;
   phone: string;
   password: string;
-  role: "admin" | "shopkeeper" | "storekeeper" | "user";
+  role: Role;
   isVerified?: boolean;
   verificationToken?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-@Entity("users")
-export class User implements IUser {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: "varchar", length: 255 })
-  name: string;
-
-  @Column({ type: "varchar", length: 255, unique: true })
-  email: string;
-
-  @Column({ type: "varchar", length: 20 })
-  phone: string;
-
-  @Column({ type: "varchar", length: 1024 })
-  password: string;
-
-  @Column({
-    type: "enum",
-    enum: ["admin", "shopkeeper", "storekeeper", "user"],
-    default: "user",
-  })
-  role: "admin" | "shopkeeper" | "storekeeper" | "user";
-
-  @Column({ type: "boolean", default: false })
-  isVerified: boolean;
-
-  @Column({ type: "varchar", length: 255, nullable: true })
-  verificationToken: string;
-
-  @BeforeInsert()
-  @BeforeUpdate()
-  async hashPassword() {
-    if (this.password && !this.password.startsWith('$2')) {
-      this.password = await bcrypt.hash(this.password, 10);
+export class UserService {
+  static async hashPassword(password: string): Promise<string> {
+    if (password && !password.startsWith('$2')) {
+      return await bcrypt.hash(password, 10);
     }
+    return password;
   }
 
-  async comparePassword(candidatePassword: string): Promise<boolean> {
-    return bcrypt.compare(candidatePassword, this.password);
+  static async comparePassword(candidatePassword: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(candidatePassword, hashedPassword);
   }
 }
 
+// Export Prisma User type as default
+export type User = PrismaUser;
 export default User;

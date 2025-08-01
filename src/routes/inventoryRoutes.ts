@@ -1,20 +1,20 @@
-import { Router } from "express";
+import express from "express";
 import {
   getShopInventory,
   getStoreInventory,
   getAnyInventory,
 } from "../controllers/inventoryController";
-import { hasRole } from "../middleware/authMiddleware";
+import { authorizeRole } from "../middleware/authMiddleware";
 
-const router = Router();
+const router = express.Router();
 
-// Shopkeeper: view items in their own shop
-router.get("/shop", hasRole("shopkeeper"), getShopInventory);
+// Route for shopkeeper to view their shop's inventory
+router.get("/shop", authorizeRole(["SHOPKEEPER"]), getShopInventory);
 
-// Storekeeper: view items in their assigned store
-router.get("/store", hasRole("storekeeper"), getStoreInventory);
+// Route for storekeeper to view their store's inventory
+router.get("/store", authorizeRole(["STOREKEEPER"]), getStoreInventory);
 
-// Admin: view any shop/store's inventory
-router.get("/any", hasRole("admin"), getAnyInventory);
+// Route for admin to view any shop/store's inventory
+router.get("/any", authorizeRole(["ADMIN"]), getAnyInventory);
 
 export default router;

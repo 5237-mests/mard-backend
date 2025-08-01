@@ -1,5 +1,6 @@
-import { AppDataSource } from "../config/db";
-import User, { IUser } from "../models/user";
+import { prisma } from "../config/db";
+import { User, Role } from "../types/prisma";
+import { UserService } from "../models/user";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -9,38 +10,44 @@ export class AuthService {
     email: string;
     phone: string;
     password: string;
-    role?: string;
+    role?: Role;
     verificationToken: string;
   }) {
-    const userRepository = AppDataSource.getRepository(User);
-    const newUser = userRepository.create({
-      ...data,
-      isVerified: false,
+    const hashedPassword = await UserService.hashPassword(data.password);
+    const newUser = await prisma.user.create({
+      data: {
+        ...data,
+        password: hashedPassword,
+        role: data.role || 'USER',
+        isVerified: false,
+      },
     });
-    await userRepository.save(newUser);
     return newUser;
   }
 
   async verifyEmail(token: string) {
-    const userRepository = AppDataSource.getRepository(User);
     const jwtSecret = process.env.JWT_SECRET || "default_secret";
     const payload = jwt.verify(token, jwtSecret);
-    const user = await userRepository.findOne({
+    const user = await prisma.user.findFirst({
       where: {
         email: (payload as any).email,
         verificationToken: token,
       }
     });
     if (!user) throw new Error("Invalid or expired verification token");
-    user.isVerified = true;
-    user.verificationToken = null;
-    await userRepository.save(user);
-    return user;
+    
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationToken: null,
+      },
+    });
+    return updatedUser;
   }
 
   async loginUser(email: string, password: string) {
-    const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOne({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error("Invalid credentials");
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid credentials");

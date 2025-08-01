@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
-import { AppDataSource } from "../config/db";
+import { prisma } from "../config/db";
 import { TransferService } from "../services/transferService";
-import User from "../models/user";
 import { sendEmail } from "../services/emailService";
-import { sendNotification } from "../services/notificationService";
+import { createNotification } from "../services/notificationService";
 
 export const listTransferRequests = async (req: Request, res: Response) => {
   const transferService = new TransferService();
@@ -33,8 +32,7 @@ export const adminTransfer = async (req: Request, res: Response) => {
       adminId
     );
     // Email and in-app notification to receiver
-    const userRepository = AppDataSource.getRepository(User);
-    const receiver = await userRepository.findOne({ where: { id: parseInt(toId) } });
+    const receiver = await prisma.user.findUnique({ where: { id: parseInt(toId) } });
     const message = `Transfer from ${fromId} to you has been completed. Items: ${JSON.stringify(
       items
     )}`;
@@ -46,7 +44,7 @@ export const adminTransfer = async (req: Request, res: Response) => {
       );
     }
     if (receiver) {
-      await sendNotification(receiver.id.toString(), message);
+      await createNotification(receiver.id.toString(), message);
     }
     res
       .status(201)

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Item as PrismaItem } from "../types/prisma";
 
 export interface IItem {
   id: number;
@@ -8,22 +8,6 @@ export interface IItem {
   description: string;
 }
 
-@Entity("items")
-export class Item implements IItem {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ type: "varchar", length: 255 })
-  name: string;
-
-  @Column({ type: "varchar", length: 100, unique: true })
-  code: string;
-
-  @Column({ type: "varchar", length: 50 })
-  unit: string;
-
-  @Column({ type: "text", nullable: true })
-  description: string;
-}
-
+// Export Prisma Item type as default
+export type Item = PrismaItem;
 export default Item;

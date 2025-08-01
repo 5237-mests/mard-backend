@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import { Notification as PrismaNotification } from "../types/prisma";
 import User from "./user";
 
 export interface INotification {
@@ -9,23 +9,6 @@ export interface INotification {
   createdAt: Date;
 }
 
-@Entity("notifications")
-export class Notification implements INotification {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: "user_id" })
-  user: User;
-
-  @Column({ type: "text" })
-  message: string;
-
-  @Column({ type: "boolean", default: false })
-  read: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-}
-
+// Export Prisma Notification type as default
+export type Notification = PrismaNotification;
 export default Notification;

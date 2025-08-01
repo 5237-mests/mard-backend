@@ -1,32 +1,46 @@
-import { AppDataSource } from "../config/db";
-import User from "../models/user";
+import { prisma } from "../config/db";
+import { User, Role } from "../types/prisma";
+import { UserService as UserUtility } from "../models/user";
 
 export class UserService {
-  async createUser(userData: any) {
-    const userRepository = AppDataSource.getRepository(User);
-    const user = userRepository.create(userData);
-    return await userRepository.save(user);
+  async createUser(userData: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    role?: Role;
+    isVerified?: boolean;
+    verificationToken?: string;
+  }) {
+    const hashedPassword = await UserUtility.hashPassword(userData.password);
+    return await prisma.user.create({
+      data: {
+        ...userData,
+        password: hashedPassword,
+        role: userData.role || 'USER',
+      },
+    });
   }
 
   async findUserByEmail(email: string) {
-    const userRepository = AppDataSource.getRepository(User);
-    return await userRepository.findOne({ where: { email } });
+    return await prisma.user.findUnique({ where: { email } });
   }
 
   async updateUserRole(
     userId: string,
-    role: "admin" | "shopkeeper" | "storekeeper" | "user"
+    role: Role
   ) {
-    const userRepository = AppDataSource.getRepository(User);
-    await userRepository.update({ id: parseInt(userId) }, { role });
-    return await userRepository.findOne({ where: { id: parseInt(userId) } });
+    await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: { role },
+    });
+    return await prisma.user.findUnique({ where: { id: parseInt(userId) } });
   }
 
   async getAllUsers() {
     console.log("Fetching all users from the database");
-    const userRepository = AppDataSource.getRepository(User);
     // Log the number of users in the database
-    const users = await userRepository.find({});
+    const users = await prisma.user.findMany({});
     console.log("Total users in database:", users.length);
     // Return the list of users
     console.log("Returning all users:", users);
@@ -38,7 +52,6 @@ export class UserService {
   }
 
   async getUserById(userId: string) {
-    const userRepository = AppDataSource.getRepository(User);
-    return await userRepository.findOne({ where: { id: parseInt(userId) } });
+    return await prisma.user.findUnique({ where: { id: parseInt(userId) } });
   }
 }

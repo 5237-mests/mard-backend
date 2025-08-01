@@ -1,52 +1,52 @@
+import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 import express from "express";
-import authMiddleware from "../middleware/authMiddleware";
-import { roleMiddleware } from "../middleware/roleMiddleware";
 import {
+  listTransferRequests,
+  adminTransfer,
   requestStockTransfer,
   approveTransferRequest,
   rejectTransferRequest,
-  listTransferRequests,
-  adminTransfer,
 } from "../controllers/transferController";
 
 const router = express.Router();
-// List and filter transfer requests
+
+// List all transfer requests (Admin only)
 router.get(
-  "/list",
-  authMiddleware,
-  roleMiddleware(["admin", "storekeeper", "shopkeeper"]),
+  "/",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
   listTransferRequests
 );
 
-// Admin/storekeeper direct transfer
+// Admin direct transfer (Admin only)
 router.post(
-  "/admin-transfer",
-  authMiddleware,
-  roleMiddleware(["admin", "storekeeper"]),
+  "/admin",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
   adminTransfer
 );
 
-// Shopkeeper requests transfer to store or another shop
+// Request stock transfer (Shopkeeper only)
 router.post(
   "/request",
-  authMiddleware,
-  roleMiddleware(["shopkeeper"]),
+  authenticateToken,
+  authorizeRole(["SHOPKEEPER"]),
   requestStockTransfer
 );
 
-// Approve a transfer request
-router.post(
+// Approve transfer request (Admin only)
+router.put(
   "/approve",
-  authMiddleware,
-  roleMiddleware(["admin", "storekeeper", "shopkeeper"]),
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
   approveTransferRequest
 );
 
-// Reject a transfer request
-router.post(
+// Reject transfer request (Admin only)
+router.put(
   "/reject",
-  authMiddleware,
-  roleMiddleware(["admin", "storekeeper", "shopkeeper"]),
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
   rejectTransferRequest
 );
 

@@ -1,12 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from "typeorm";
+import { Sale as PrismaSale, ISaleItem } from "../types/prisma";
 import Shop from "./Shop";
 import User from "./user";
 import Item from "./Item";
 
-export interface ISaleItem {
-  itemId: number;
-  quantitySold: number;
-}
+export { ISaleItem };
 
 export interface ISale {
   id: number;
@@ -16,24 +13,6 @@ export interface ISale {
   soldAt: Date;
 }
 
-@Entity("sales")
-export class Sale implements ISale {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @ManyToOne(() => Shop)
-  @JoinColumn({ name: "shop_id" })
-  shop: Shop;
-
-  @Column("json")
-  items: ISaleItem[];
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: "sold_by_id" })
-  soldBy: User;
-
-  @CreateDateColumn()
-  soldAt: Date;
-}
-
+// Export Prisma Sale type as default
+export type Sale = PrismaSale;
 export default Sale;
