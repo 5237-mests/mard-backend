@@ -1,24 +1,50 @@
 import { Request, Response } from "express";
-import { prisma } from "../config/db";
+import { query } from "../config/db";
 
 export const getShopInventory = async (req: Request, res: Response) => {
   // Shopkeeper: view items in their own shop
   try {
     const shopkeeperId = req.user.id;
     
-    const shop = await prisma.shop.findFirst({ 
-      where: { shopkeeperId: shopkeeperId },
-      include: { shopkeeper: true }
-    });
+    const shopSql = `
+      SELECT s.*, u.name as shopkeeper_name 
+      FROM shops s 
+      LEFT JOIN users u ON s.shopkeeperId = u.id 
+      WHERE s.shopkeeperId = ?
+    `;
+    const shops = await query(shopSql, [shopkeeperId]);
+    const shop = shops[0];
+    
     if (!shop) return res.status(404).json({ message: "Shop not found" });
     
-    const items = await prisma.shopItem.findMany({ 
-      where: { shopId: shop.id },
-      include: {
-        shop: true,
-        item: true,
+    const itemsSql = `
+      SELECT 
+        si.*,
+        s.name as shop_name, s.location as shop_location,
+        i.name as item_name, i.code as item_code, i.unit as item_unit, i.description as item_description
+      FROM shop_items si
+      JOIN shops s ON si.shopId = s.id
+      JOIN items i ON si.itemId = i.id
+      WHERE si.shopId = ?
+    `;
+    const itemsData = await query(itemsSql, [shop.id]);
+    
+    const items = itemsData.map((item: any) => ({
+      ...item,
+      shop: {
+        id: item.shopId,
+        name: item.shop_name,
+        location: item.shop_location
+      },
+      item: {
+        id: item.itemId,
+        name: item.item_name,
+        code: item.item_code,
+        unit: item.item_unit,
+        description: item.item_description
       }
-    });
+    }));
+    
     res.status(200).json(items);
   } catch (error) {
     res.status(500).json({ message: "Error fetching shop inventory", error });
@@ -30,19 +56,45 @@ export const getStoreInventory = async (req: Request, res: Response) => {
   try {
     const storekeeperId = req.user.id;
     
-    const store = await prisma.store.findFirst({ 
-      where: { storekeeperId: storekeeperId },
-      include: { storekeeper: true }
-    });
+    const storeSql = `
+      SELECT st.*, u.name as storekeeper_name 
+      FROM stores st 
+      LEFT JOIN users u ON st.storekeeperId = u.id 
+      WHERE st.storekeeperId = ?
+    `;
+    const stores = await query(storeSql, [storekeeperId]);
+    const store = stores[0];
+    
     if (!store) return res.status(404).json({ message: "Store not found" });
     
-    const items = await prisma.storeItem.findMany({ 
-      where: { storeId: store.id },
-      include: {
-        store: true,
-        item: true,
+    const itemsSql = `
+      SELECT 
+        sti.*,
+        st.name as store_name, st.location as store_location,
+        i.name as item_name, i.code as item_code, i.unit as item_unit, i.description as item_description
+      FROM store_items sti
+      JOIN stores st ON sti.storeId = st.id
+      JOIN items i ON sti.itemId = i.id
+      WHERE sti.storeId = ?
+    `;
+    const itemsData = await query(itemsSql, [store.id]);
+    
+    const items = itemsData.map((item: any) => ({
+      ...item,
+      store: {
+        id: item.storeId,
+        name: item.store_name,
+        location: item.store_location
+      },
+      item: {
+        id: item.itemId,
+        name: item.item_name,
+        code: item.item_code,
+        unit: item.item_unit,
+        description: item.item_description
       }
-    });
+    }));
+    
     res.status(200).json(items);
   } catch (error) {
     res.status(500).json({ message: "Error fetching store inventory", error });
@@ -55,25 +107,69 @@ export const getAnyInventory = async (req: Request, res: Response) => {
     const { shopId, storeId } = req.query;
     
     if (shopId) {
-      const items = await prisma.shopItem.findMany({ 
-        where: { shopId: parseInt(shopId as string) },
-        include: {
-          shop: true,
-          item: true,
+      const itemsSql = `
+        SELECT 
+          si.*,
+          s.name as shop_name, s.location as shop_location,
+          i.name as item_name, i.code as item_code, i.unit as item_unit, i.description as item_description
+        FROM shop_items si
+        JOIN shops s ON si.shopId = s.id
+        JOIN items i ON si.itemId = i.id
+        WHERE si.shopId = ?
+      `;
+      const itemsData = await query(itemsSql, [parseInt(shopId as string)]);
+      
+      const items = itemsData.map((item: any) => ({
+        ...item,
+        shop: {
+          id: item.shopId,
+          name: item.shop_name,
+          location: item.shop_location
+        },
+        item: {
+          id: item.itemId,
+          name: item.item_name,
+          code: item.item_code,
+          unit: item.item_unit,
+          description: item.item_description
         }
-      });
+      }));
+      
       return res.status(200).json(items);
     }
+    
     if (storeId) {
-      const items = await prisma.storeItem.findMany({ 
-        where: { storeId: parseInt(storeId as string) },
-        include: {
-          store: true,
-          item: true,
+      const itemsSql = `
+        SELECT 
+          sti.*,
+          st.name as store_name, st.location as store_location,
+          i.name as item_name, i.code as item_code, i.unit as item_unit, i.description as item_description
+        FROM store_items sti
+        JOIN stores st ON sti.storeId = st.id
+        JOIN items i ON sti.itemId = i.id
+        WHERE sti.storeId = ?
+      `;
+      const itemsData = await query(itemsSql, [parseInt(storeId as string)]);
+      
+      const items = itemsData.map((item: any) => ({
+        ...item,
+        store: {
+          id: item.storeId,
+          name: item.store_name,
+          location: item.store_location
+        },
+        item: {
+          id: item.itemId,
+          name: item.item_name,
+          code: item.item_code,
+          unit: item.item_unit,
+          description: item.item_description
         }
-      });
+      }));
+      
       return res.status(200).json(items);
     }
+    
     return res.status(400).json({ message: "Provide shopId or storeId" });
   } catch (error) {
     res.status(500).json({ message: "Error fetching inventory", error });

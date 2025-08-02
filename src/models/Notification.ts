@@ -1,14 +1,13 @@
-import { Notification as PrismaNotification } from "../types/prisma";
-import User from "./user";
+import { Notification as DatabaseNotification } from "../types/database";
 
 export interface INotification {
   id: number;
-  user: User;
+  userId: number;
   message: string;
   read: boolean;
   createdAt: Date;
 }
 
-// Export Prisma Notification type as default
-export type Notification = PrismaNotification;
+// Export database Notification type as default
+export type Notification = DatabaseNotification;
 export default Notification;

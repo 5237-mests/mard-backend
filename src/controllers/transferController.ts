@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../config/db";
+import { query } from "../config/db";
 import { TransferService } from "../services/transferService";
 import { sendEmail } from "../services/emailService";
 import { createNotification } from "../services/notificationService";
@@ -32,7 +32,10 @@ export const adminTransfer = async (req: Request, res: Response) => {
       adminId
     );
     // Email and in-app notification to receiver
-    const receiver = await prisma.user.findUnique({ where: { id: parseInt(toId) } });
+    const receiverSql = "SELECT * FROM users WHERE id = ?";
+    const receivers = await query(receiverSql, [parseInt(toId)]);
+    const receiver = receivers[0];
+    
     const message = `Transfer from ${fromId} to you has been completed. Items: ${JSON.stringify(
       items
     )}`;

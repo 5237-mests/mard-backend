@@ -1,7 +1,4 @@
-import { TransferRequest as PrismaTransferRequest, ITransferItem, TransferRequestStatus } from "../types/prisma";
-import User from "./user";
-
-export { ITransferItem };
+import { TransferRequest as DatabaseTransferRequest, ITransferItem, TransferRequestStatus } from "../types/database";
 
 export interface ITransferRequest {
   id: number;
@@ -9,10 +6,10 @@ export interface ITransferRequest {
   to: number;
   items: ITransferItem[];
   status: TransferRequestStatus;
-  requestedBy: User;
-  approvedBy?: User;
+  requestedById: number;
+  approvedById?: number;
 }
 
-// Export Prisma TransferRequest type as default
-export type TransferRequest = PrismaTransferRequest;
+// Export database TransferRequest type as default
+export type TransferRequest = DatabaseTransferRequest;
 export default TransferRequest;

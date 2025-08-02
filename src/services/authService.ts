@@ -1,5 +1,5 @@
-import { prisma } from "../config/db";
-import { User, Role } from "../types/prisma";
+import { query } from "../config/db";
+import { User, Role } from "../types/database";
 import { UserService } from "../models/user";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
@@ -14,44 +14,65 @@ export class AuthService {
     verificationToken: string;
   }) {
     const hashedPassword = await UserService.hashPassword(data.password);
-    const newUser = await prisma.user.create({
-      data: {
-        ...data,
-        password: hashedPassword,
-        role: data.role || 'USER',
-        isVerified: false,
-      },
-    });
-    return newUser;
+    const sql = `
+      INSERT INTO users (name, email, phone, password, role, isVerified, verificationToken)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+      data.name,
+      data.email,
+      data.phone,
+      hashedPassword,
+      data.role || 'USER',
+      false,
+      data.verificationToken
+    ];
+    
+    const result: any = await query(sql, params);
+    
+    // Fetch the newly created user
+    const newUserSql = "SELECT * FROM users WHERE id = ?";
+    const newUsers = await query(newUserSql, [result.insertId]);
+    return newUsers[0] as User;
   }
 
   async verifyEmail(token: string) {
     const jwtSecret = process.env.JWT_SECRET || "default_secret";
     const payload = jwt.verify(token, jwtSecret);
-    const user = await prisma.user.findFirst({
-      where: {
-        email: (payload as any).email,
-        verificationToken: token,
-      }
-    });
+    
+    const findUserSql = `
+      SELECT * FROM users 
+      WHERE email = ? AND verificationToken = ?
+    `;
+    const users = await query(findUserSql, [(payload as any).email, token]);
+    const user = users[0];
+    
     if (!user) throw new Error("Invalid or expired verification token");
     
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        isVerified: true,
-        verificationToken: null,
-      },
-    });
-    return updatedUser;
+    const updateSql = `
+      UPDATE users 
+      SET isVerified = ?, verificationToken = ? 
+      WHERE id = ?
+    `;
+    await query(updateSql, [true, null, user.id]);
+    
+    // Fetch the updated user
+    const updatedUserSql = "SELECT * FROM users WHERE id = ?";
+    const updatedUsers = await query(updatedUserSql, [user.id]);
+    return updatedUsers[0] as User;
   }
 
   async loginUser(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const sql = "SELECT * FROM users WHERE email = ?";
+    const users = await query(sql, [email]);
+    const user = users[0];
+    
     if (!user) throw new Error("Invalid credentials");
+    
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error("Invalid credentials");
     if (!user.isVerified) throw new Error("Email not verified");
-    return user;
+    
+    return user as User;
   }
 }

@@ -14,22 +14,31 @@ const db_1 = require("../config/db");
 class ShopService {
     processSale(shopId, items, soldBy) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield db_1.prisma.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+            return yield (0, db_1.transaction)((connection) => __awaiter(this, void 0, void 0, function* () {
                 // Update shop item quantities
                 for (const { itemId, quantitySold } of items) {
-                    const shopItem = yield tx.shopItem.findFirst({
-                        where: { shopId: parseInt(shopId), itemId: parseInt(itemId) }
-                    });
+                    const findShopItemSql = `
+          SELECT * FROM shop_items 
+          WHERE shopId = ? AND itemId = ?
+        `;
+                    const [shopItems] = yield connection.execute(findShopItemSql, [parseInt(shopId), parseInt(itemId)]);
+                    const shopItem = shopItems[0];
                     if (shopItem) {
-                        yield tx.shopItem.update({
-                            where: { id: shopItem.id },
-                            data: { quantity: shopItem.quantity - quantitySold }
-                        });
+                        const updateQuantitySql = `
+            UPDATE shop_items 
+            SET quantity = quantity - ? 
+            WHERE id = ?
+          `;
+                        yield connection.execute(updateQuantitySql, [quantitySold, shopItem.id]);
                     }
                 }
-                // Create sale record
-                const shop = yield tx.shop.findUnique({ where: { id: parseInt(shopId) } });
-                const seller = yield tx.user.findUnique({ where: { id: parseInt(soldBy) } });
+                // Verify shop and seller exist
+                const shopSql = "SELECT * FROM shops WHERE id = ?";
+                const [shops] = yield connection.execute(shopSql, [parseInt(shopId)]);
+                const shop = shops[0];
+                const sellerSql = "SELECT * FROM users WHERE id = ?";
+                const [sellers] = yield connection.execute(sellerSql, [parseInt(soldBy)]);
+                const seller = sellers[0];
                 if (!shop || !seller) {
                     throw new Error("Shop or seller not found");
                 }
@@ -37,28 +46,64 @@ class ShopService {
                     itemId: parseInt(item.itemId),
                     quantitySold: item.quantitySold
                 }));
-                return yield tx.sale.create({
-                    data: {
-                        shopId: shop.id,
-                        items: saleItems, // Cast to any to handle JSON type
-                        soldById: seller.id,
-                    },
-                    include: {
-                        shop: true,
-                        soldBy: true,
-                    },
-                });
+                // Create sale record
+                const createSaleSql = `
+        INSERT INTO sales (shopId, items, soldById)
+        VALUES (?, ?, ?)
+      `;
+                const [saleResult] = yield connection.execute(createSaleSql, [
+                    shop.id,
+                    JSON.stringify(saleItems),
+                    seller.id
+                ]);
+                // Fetch the created sale with relations
+                const saleId = saleResult.insertId;
+                const getSaleSql = `
+        SELECT 
+          s.*,
+          sh.name as shop_name, sh.location as shop_location,
+          u.name as soldBy_name, u.email as soldBy_email
+        FROM sales s
+        JOIN shops sh ON s.shopId = sh.id
+        JOIN users u ON s.soldById = u.id
+        WHERE s.id = ?
+      `;
+                const [saleData] = yield connection.execute(getSaleSql, [saleId]);
+                const sale = saleData[0];
+                return Object.assign(Object.assign({}, sale), { shop: {
+                        id: sale.shopId,
+                        name: sale.shop_name,
+                        location: sale.shop_location
+                    }, soldBy: {
+                        id: sale.soldById,
+                        name: sale.soldBy_name,
+                        email: sale.soldBy_email
+                    }, items: JSON.parse(sale.items) });
             }));
         });
     }
     getSales(filter, itemId) {
         return __awaiter(this, void 0, void 0, function* () {
-            let sales = yield db_1.prisma.sale.findMany({
-                include: {
-                    shop: true,
-                    soldBy: true,
-                }
-            });
+            let sql = `
+      SELECT 
+        s.*,
+        sh.name as shop_name, sh.location as shop_location,
+        u.name as soldBy_name, u.email as soldBy_email
+      FROM sales s
+      JOIN shops sh ON s.shopId = sh.id
+      JOIN users u ON s.soldById = u.id
+      ORDER BY s.soldAt DESC
+    `;
+            const salesData = yield (0, db_1.query)(sql);
+            let sales = salesData.map((sale) => (Object.assign(Object.assign({}, sale), { shop: {
+                    id: sale.shopId,
+                    name: sale.shop_name,
+                    location: sale.shop_location
+                }, soldBy: {
+                    id: sale.soldById,
+                    name: sale.soldBy_name,
+                    email: sale.soldBy_email
+                }, items: JSON.parse(sale.items) })));
             if (itemId) {
                 sales = sales.filter((sale) => {
                     const saleItems = sale.items;

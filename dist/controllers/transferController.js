@@ -42,7 +42,9 @@ const adminTransfer = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     try {
         const transfer = yield transferService.adminTransfer(parseInt(fromId), parseInt(toId), items, adminId);
         // Email and in-app notification to receiver
-        const receiver = yield db_1.prisma.user.findUnique({ where: { id: parseInt(toId) } });
+        const receiverSql = "SELECT * FROM users WHERE id = ?";
+        const receivers = yield (0, db_1.query)(receiverSql, [parseInt(toId)]);
+        const receiver = receivers[0];
         const message = `Transfer from ${fromId} to you has been completed. Items: ${JSON.stringify(items)}`;
         if (receiver && receiver.email) {
             yield (0, emailService_1.sendEmail)(receiver.email, "You have received a stock transfer", message);

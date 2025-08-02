@@ -1,14 +1,12 @@
-import { StoreItem as PrismaStoreItem } from "../types/prisma";
-import Store from "./Store";
-import Item from "./Item";
+import { StoreItem as DatabaseStoreItem } from "../types/database";
 
 export interface IStoreItem {
   id: number;
-  store: Store;
-  item: Item;
+  storeId: number;
+  itemId: number;
   quantity: number;
 }
 
-// Export Prisma StoreItem type as default
-export type StoreItem = PrismaStoreItem;
+// Export database StoreItem type as default
+export type StoreItem = DatabaseStoreItem;
 export default StoreItem;

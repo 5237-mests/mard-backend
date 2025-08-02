@@ -21,37 +21,55 @@ class AuthService {
     registerUser(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const hashedPassword = yield user_1.UserService.hashPassword(data.password);
-            const newUser = yield db_1.prisma.user.create({
-                data: Object.assign(Object.assign({}, data), { password: hashedPassword, role: data.role || 'USER', isVerified: false }),
-            });
-            return newUser;
+            const sql = `
+      INSERT INTO users (name, email, phone, password, role, isVerified, verificationToken)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+            const params = [
+                data.name,
+                data.email,
+                data.phone,
+                hashedPassword,
+                data.role || 'USER',
+                false,
+                data.verificationToken
+            ];
+            const result = yield (0, db_1.query)(sql, params);
+            // Fetch the newly created user
+            const newUserSql = "SELECT * FROM users WHERE id = ?";
+            const newUsers = yield (0, db_1.query)(newUserSql, [result.insertId]);
+            return newUsers[0];
         });
     }
     verifyEmail(token) {
         return __awaiter(this, void 0, void 0, function* () {
             const jwtSecret = process.env.JWT_SECRET || "default_secret";
             const payload = jsonwebtoken_1.default.verify(token, jwtSecret);
-            const user = yield db_1.prisma.user.findFirst({
-                where: {
-                    email: payload.email,
-                    verificationToken: token,
-                }
-            });
+            const findUserSql = `
+      SELECT * FROM users 
+      WHERE email = ? AND verificationToken = ?
+    `;
+            const users = yield (0, db_1.query)(findUserSql, [payload.email, token]);
+            const user = users[0];
             if (!user)
                 throw new Error("Invalid or expired verification token");
-            const updatedUser = yield db_1.prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    isVerified: true,
-                    verificationToken: null,
-                },
-            });
-            return updatedUser;
+            const updateSql = `
+      UPDATE users 
+      SET isVerified = ?, verificationToken = ? 
+      WHERE id = ?
+    `;
+            yield (0, db_1.query)(updateSql, [true, null, user.id]);
+            // Fetch the updated user
+            const updatedUserSql = "SELECT * FROM users WHERE id = ?";
+            const updatedUsers = yield (0, db_1.query)(updatedUserSql, [user.id]);
+            return updatedUsers[0];
         });
     }
     loginUser(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield db_1.prisma.user.findUnique({ where: { email } });
+            const sql = "SELECT * FROM users WHERE email = ?";
+            const users = yield (0, db_1.query)(sql, [email]);
+            const user = users[0];
             if (!user)
                 throw new Error("Invalid credentials");
             const isMatch = yield bcrypt_1.default.compare(password, user.password);

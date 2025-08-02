@@ -1,15 +1,34 @@
-import { prisma } from "../config/db";
-import { TransferRequest, ITransferItem } from "../types/prisma";
+import { query, transaction } from "../config/db";
+import { TransferRequest, ITransferItem, TransferRequestWithRelations } from "../types/database";
 
 export class TransferService {
   async listTransferRequests(filter: any = {}) {
-    return await prisma.transferRequest.findMany({
-      include: {
-        requestedBy: true,
-        approvedBy: true,
+    const sql = `
+      SELECT 
+        tr.*,
+        req.name as requested_by_name, req.email as requested_by_email,
+        app.name as approved_by_name, app.email as approved_by_email
+      FROM transfer_requests tr
+      JOIN users req ON tr.requestedById = req.id
+      LEFT JOIN users app ON tr.approvedById = app.id
+      ORDER BY tr.id DESC
+    `;
+    
+    const transfersData = await query(sql);
+    return transfersData.map((transfer: any) => ({
+      ...transfer,
+      requestedBy: {
+        id: transfer.requestedById,
+        name: transfer.requested_by_name,
+        email: transfer.requested_by_email
       },
-      orderBy: { id: "desc" }
-    });
+      approvedBy: transfer.approvedById ? {
+        id: transfer.approvedById,
+        name: transfer.approved_by_name,
+        email: transfer.approved_by_email
+      } : null,
+      items: JSON.parse(transfer.items)
+    })) as TransferRequestWithRelations[];
   }
 
   async adminTransfer(
@@ -18,201 +37,310 @@ export class TransferService {
     items: ITransferItem[],
     adminId: number
   ) {
-    return await prisma.$transaction(async (tx) => {
+    return await transaction(async (connection) => {
       // Get admin user
-      const admin = await tx.user.findUnique({ where: { id: adminId } });
+      const adminSql = "SELECT * FROM users WHERE id = ?";
+      const [admins] = await connection.execute(adminSql, [adminId]);
+      const admin = (admins as any[])[0];
       if (!admin) throw new Error("Admin user not found");
 
       // Create and immediately approve the transfer
-      const transfer = await tx.transferRequest.create({
-        data: {
-          from: fromId,
-          to: toId,
-          items: items as any, // Cast to any to handle JSON type
-          status: "APPROVED",
-          requestedById: admin.id,
-          approvedById: admin.id,
-        },
-      });
+      const createTransferSql = `
+        INSERT INTO transfer_requests (\`from\`, \`to\`, items, status, requestedById, approvedById)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `;
+      const [transferResult] = await connection.execute(createTransferSql, [
+        fromId,
+        toId,
+        JSON.stringify(items),
+        "APPROVED",
+        admin.id,
+        admin.id
+      ]);
 
       // Update stock: decrement from sender, increment to receiver
       for (const item of items) {
         // Check if it's a shop item first
-        const fromShopItem = await tx.shopItem.findFirst({
-          where: { shopId: fromId, itemId: item.itemId }
-        });
+        const fromShopItemSql = `
+          SELECT * FROM shop_items 
+          WHERE shopId = ? AND itemId = ?
+        `;
+        const [fromShopItems] = await connection.execute(fromShopItemSql, [fromId, item.itemId]);
+        const fromShopItem = (fromShopItems as any[])[0];
 
         if (fromShopItem) {
           // Update shop item quantity
-          await tx.shopItem.update({
-            where: { id: fromShopItem.id },
-            data: { quantity: fromShopItem.quantity - item.quantity }
-          });
+          const updateShopSql = `
+            UPDATE shop_items 
+            SET quantity = quantity - ? 
+            WHERE id = ?
+          `;
+          await connection.execute(updateShopSql, [item.quantity, fromShopItem.id]);
         } else {
           // Check store item
-          const fromStoreItem = await tx.storeItem.findFirst({
-            where: { storeId: fromId, itemId: item.itemId }
-          });
+          const fromStoreItemSql = `
+            SELECT * FROM store_items 
+            WHERE storeId = ? AND itemId = ?
+          `;
+          const [fromStoreItems] = await connection.execute(fromStoreItemSql, [fromId, item.itemId]);
+          const fromStoreItem = (fromStoreItems as any[])[0];
+          
           if (fromStoreItem) {
-            await tx.storeItem.update({
-              where: { id: fromStoreItem.id },
-              data: { quantity: fromStoreItem.quantity - item.quantity }
-            });
+            const updateStoreSql = `
+              UPDATE store_items 
+              SET quantity = quantity - ? 
+              WHERE id = ?
+            `;
+            await connection.execute(updateStoreSql, [item.quantity, fromStoreItem.id]);
           }
         }
 
         // Add to receiver
-        const toShopItem = await tx.shopItem.findFirst({
-          where: { shopId: toId, itemId: item.itemId }
-        });
+        const toShopItemSql = `
+          SELECT * FROM shop_items 
+          WHERE shopId = ? AND itemId = ?
+        `;
+        const [toShopItems] = await connection.execute(toShopItemSql, [toId, item.itemId]);
+        const toShopItem = (toShopItems as any[])[0];
 
         if (toShopItem) {
-          await tx.shopItem.update({
-            where: { id: toShopItem.id },
-            data: { quantity: toShopItem.quantity + item.quantity }
-          });
+          const updateToShopSql = `
+            UPDATE shop_items 
+            SET quantity = quantity + ? 
+            WHERE id = ?
+          `;
+          await connection.execute(updateToShopSql, [item.quantity, toShopItem.id]);
         } else {
-          const toStoreItem = await tx.storeItem.findFirst({
-            where: { storeId: toId, itemId: item.itemId }
-          });
+          const toStoreItemSql = `
+            SELECT * FROM store_items 
+            WHERE storeId = ? AND itemId = ?
+          `;
+          const [toStoreItems] = await connection.execute(toStoreItemSql, [toId, item.itemId]);
+          const toStoreItem = (toStoreItems as any[])[0];
+          
           if (toStoreItem) {
-            await tx.storeItem.update({
-              where: { id: toStoreItem.id },
-              data: { quantity: toStoreItem.quantity + item.quantity }
-            });
+            const updateToStoreSql = `
+              UPDATE store_items 
+              SET quantity = quantity + ? 
+              WHERE id = ?
+            `;
+            await connection.execute(updateToStoreSql, [item.quantity, toStoreItem.id]);
           }
         }
       }
 
-      return transfer;
+      // Fetch the created transfer
+      const getTransferSql = "SELECT * FROM transfer_requests WHERE id = ?";
+      const [transfers] = await connection.execute(getTransferSql, [(transferResult as any).insertId]);
+      const transfer = (transfers as any[])[0];
+      
+      return {
+        ...transfer,
+        items: JSON.parse(transfer.items)
+      } as TransferRequest;
     });
   }
 
   async createTransferRequest(fromId: number, toId: number, items: ITransferItem[], requesterId: number) {
-    const requester = await prisma.user.findUnique({ where: { id: requesterId } });
+    const requesterSql = "SELECT * FROM users WHERE id = ?";
+    const users = await query(requesterSql, [requesterId]);
+    const requester = users[0];
+    
     if (!requester) throw new Error("Requester user not found");
 
-    return await prisma.transferRequest.create({
-      data: {
-        from: fromId,
-        to: toId,
-        items: items as any, // Cast to any to handle JSON type
-        status: "PENDING",
-        requestedById: requester.id,
-      },
-    });
+    const createSql = `
+      INSERT INTO transfer_requests (\`from\`, \`to\`, items, status, requestedById)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const result: any = await query(createSql, [
+      fromId,
+      toId,
+      JSON.stringify(items),
+      "PENDING",
+      requester.id
+    ]);
+
+    // Fetch the created transfer
+    const getTransferSql = "SELECT * FROM transfer_requests WHERE id = ?";
+    const transfers = await query(getTransferSql, [result.insertId]);
+    const transfer = transfers[0];
+    
+    return {
+      ...transfer,
+      items: JSON.parse(transfer.items)
+    } as TransferRequest;
   }
 
   async approveTransferRequest(requestId: number, approverId: number) {
-    return await prisma.$transaction(async (tx) => {
-      const transfer = await tx.transferRequest.findUnique({
-        where: { id: requestId },
-        include: {
-          requestedBy: true,
-          approvedBy: true,
-        },
-      });
+    return await transaction(async (connection) => {
+      const transferSql = `
+        SELECT 
+          tr.*,
+          req.name as requested_by_name, req.email as requested_by_email,
+          app.name as approved_by_name, app.email as approved_by_email
+        FROM transfer_requests tr
+        JOIN users req ON tr.requestedById = req.id
+        LEFT JOIN users app ON tr.approvedById = app.id
+        WHERE tr.id = ?
+      `;
+      const [transfers] = await connection.execute(transferSql, [requestId]);
+      const transferData = (transfers as any[])[0];
       
-      if (!transfer) throw new Error("Transfer request not found");
-      if (transfer.status !== "PENDING") throw new Error("Transfer request is not pending");
+      if (!transferData) throw new Error("Transfer request not found");
+      if (transferData.status !== "PENDING") throw new Error("Transfer request is not pending");
 
-      const approver = await tx.user.findUnique({ where: { id: approverId } });
+      const approverSql = "SELECT * FROM users WHERE id = ?";
+      const [approvers] = await connection.execute(approverSql, [approverId]);
+      const approver = (approvers as any[])[0];
       if (!approver) throw new Error("Approver user not found");
 
       // Update stock: decrement from sender, increment to receiver
-      const transferItems = transfer.items as unknown as ITransferItem[];
+      const transferItems = JSON.parse(transferData.items) as ITransferItem[];
       for (const item of transferItems) {
         // Decrement from sender
-        const fromShopItem = await tx.shopItem.findFirst({
-          where: { shopId: transfer.from, itemId: item.itemId }
-        });
+        const fromShopItemSql = `
+          SELECT * FROM shop_items 
+          WHERE shopId = ? AND itemId = ?
+        `;
+        const [fromShopItems] = await connection.execute(fromShopItemSql, [transferData.from, item.itemId]);
+        const fromShopItem = (fromShopItems as any[])[0];
 
         if (fromShopItem) {
-          await tx.shopItem.update({
-            where: { id: fromShopItem.id },
-            data: { quantity: fromShopItem.quantity - item.quantity }
-          });
+          const updateShopSql = `
+            UPDATE shop_items 
+            SET quantity = quantity - ? 
+            WHERE id = ?
+          `;
+          await connection.execute(updateShopSql, [item.quantity, fromShopItem.id]);
         } else {
-          const fromStoreItem = await tx.storeItem.findFirst({
-            where: { storeId: transfer.from, itemId: item.itemId }
-          });
+          const fromStoreItemSql = `
+            SELECT * FROM store_items 
+            WHERE storeId = ? AND itemId = ?
+          `;
+          const [fromStoreItems] = await connection.execute(fromStoreItemSql, [transferData.from, item.itemId]);
+          const fromStoreItem = (fromStoreItems as any[])[0];
+          
           if (fromStoreItem) {
-            await tx.storeItem.update({
-              where: { id: fromStoreItem.id },
-              data: { quantity: fromStoreItem.quantity - item.quantity }
-            });
+            const updateStoreSql = `
+              UPDATE store_items 
+              SET quantity = quantity - ? 
+              WHERE id = ?
+            `;
+            await connection.execute(updateStoreSql, [item.quantity, fromStoreItem.id]);
           }
         }
 
         // Increment to receiver
-        const toShopItem = await tx.shopItem.findFirst({
-          where: { shopId: transfer.to, itemId: item.itemId }
-        });
+        const toShopItemSql = `
+          SELECT * FROM shop_items 
+          WHERE shopId = ? AND itemId = ?
+        `;
+        const [toShopItems] = await connection.execute(toShopItemSql, [transferData.to, item.itemId]);
+        const toShopItem = (toShopItems as any[])[0];
 
         if (toShopItem) {
-          await tx.shopItem.update({
-            where: { id: toShopItem.id },
-            data: { quantity: toShopItem.quantity + item.quantity }
-          });
+          const updateToShopSql = `
+            UPDATE shop_items 
+            SET quantity = quantity + ? 
+            WHERE id = ?
+          `;
+          await connection.execute(updateToShopSql, [item.quantity, toShopItem.id]);
         } else {
-          const toStoreItem = await tx.storeItem.findFirst({
-            where: { storeId: transfer.to, itemId: item.itemId }
-          });
+          const toStoreItemSql = `
+            SELECT * FROM store_items 
+            WHERE storeId = ? AND itemId = ?
+          `;
+          const [toStoreItems] = await connection.execute(toStoreItemSql, [transferData.to, item.itemId]);
+          const toStoreItem = (toStoreItems as any[])[0];
+          
           if (toStoreItem) {
-            await tx.storeItem.update({
-              where: { id: toStoreItem.id },
-              data: { quantity: toStoreItem.quantity + item.quantity }
-            });
+            const updateToStoreSql = `
+              UPDATE store_items 
+              SET quantity = quantity + ? 
+              WHERE id = ?
+            `;
+            await connection.execute(updateToStoreSql, [item.quantity, toStoreItem.id]);
           }
         }
       }
 
       // Mark transfer as approved
-      const updatedTransfer = await tx.transferRequest.update({
-        where: { id: requestId },
-        data: {
-          status: "APPROVED",
-          approvedById: approver.id,
-        },
-        include: {
-          requestedBy: true,
-          approvedBy: true,
-        },
-      });
+      const updateTransferSql = `
+        UPDATE transfer_requests 
+        SET status = ?, approvedById = ? 
+        WHERE id = ?
+      `;
+      await connection.execute(updateTransferSql, ["APPROVED", approver.id, requestId]);
 
-      return updatedTransfer;
+      // Fetch the updated transfer with relations
+      const [updatedTransfers] = await connection.execute(transferSql, [requestId]);
+      const updatedTransferData = (updatedTransfers as any[])[0];
+
+      return {
+        ...updatedTransferData,
+        requestedBy: {
+          id: updatedTransferData.requestedById,
+          name: updatedTransferData.requested_by_name,
+          email: updatedTransferData.requested_by_email
+        },
+        approvedBy: {
+          id: updatedTransferData.approvedById,
+          name: updatedTransferData.approved_by_name,
+          email: updatedTransferData.approved_by_email
+        },
+        items: JSON.parse(updatedTransferData.items)
+      } as TransferRequestWithRelations;
     });
   }
 
   async rejectTransferRequest(requestId: number, rejectorId: number) {
-    return await prisma.$transaction(async (tx) => {
-      const transfer = await tx.transferRequest.findUnique({
-        where: { id: requestId },
-        include: {
-          requestedBy: true,
-          approvedBy: true,
-        },
-      });
+    return await transaction(async (connection) => {
+      const transferSql = `
+        SELECT 
+          tr.*,
+          req.name as requested_by_name, req.email as requested_by_email,
+          app.name as approved_by_name, app.email as approved_by_email
+        FROM transfer_requests tr
+        JOIN users req ON tr.requestedById = req.id
+        LEFT JOIN users app ON tr.approvedById = app.id
+        WHERE tr.id = ?
+      `;
+      const [transfers] = await connection.execute(transferSql, [requestId]);
+      const transferData = (transfers as any[])[0];
       
-      if (!transfer) throw new Error("Transfer request not found");
-      if (transfer.status !== "PENDING") throw new Error("Transfer request is not pending");
+      if (!transferData) throw new Error("Transfer request not found");
+      if (transferData.status !== "PENDING") throw new Error("Transfer request is not pending");
 
-      const rejector = await tx.user.findUnique({ where: { id: rejectorId } });
+      const rejectorSql = "SELECT * FROM users WHERE id = ?";
+      const [rejectors] = await connection.execute(rejectorSql, [rejectorId]);
+      const rejector = (rejectors as any[])[0];
       if (!rejector) throw new Error("Rejector user not found");
 
-      const updatedTransfer = await tx.transferRequest.update({
-        where: { id: requestId },
-        data: {
-          status: "REJECTED",
-          approvedById: rejector.id,
-        },
-        include: {
-          requestedBy: true,
-          approvedBy: true,
-        },
-      });
+      const updateTransferSql = `
+        UPDATE transfer_requests 
+        SET status = ?, approvedById = ? 
+        WHERE id = ?
+      `;
+      await connection.execute(updateTransferSql, ["REJECTED", rejector.id, requestId]);
 
-      return updatedTransfer;
+      // Fetch the updated transfer with relations
+      const [updatedTransfers] = await connection.execute(transferSql, [requestId]);
+      const updatedTransferData = (updatedTransfers as any[])[0];
+
+      return {
+        ...updatedTransferData,
+        requestedBy: {
+          id: updatedTransferData.requestedById,
+          name: updatedTransferData.requested_by_name,
+          email: updatedTransferData.requested_by_email
+        },
+        approvedBy: {
+          id: updatedTransferData.approvedById,
+          name: updatedTransferData.approved_by_name,
+          email: updatedTransferData.approved_by_email
+        },
+        items: JSON.parse(updatedTransferData.items)
+      } as TransferRequestWithRelations;
     });
   }
 }

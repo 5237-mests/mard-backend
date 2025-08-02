@@ -16,32 +16,52 @@ class UserService {
     createUser(userData) {
         return __awaiter(this, void 0, void 0, function* () {
             const hashedPassword = yield user_1.UserService.hashPassword(userData.password);
-            return yield db_1.prisma.user.create({
-                data: Object.assign(Object.assign({}, userData), { password: hashedPassword, role: userData.role || 'USER' }),
-            });
+            const sql = `
+      INSERT INTO users (name, email, phone, password, role, isVerified, verificationToken)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+            const params = [
+                userData.name,
+                userData.email,
+                userData.phone,
+                hashedPassword,
+                userData.role || 'USER',
+                userData.isVerified || false,
+                userData.verificationToken || null
+            ];
+            const result = yield (0, db_1.query)(sql, params);
+            // Fetch the newly created user
+            const newUserSql = "SELECT * FROM users WHERE id = ?";
+            const newUsers = yield (0, db_1.query)(newUserSql, [result.insertId]);
+            return newUsers[0];
         });
     }
     findUserByEmail(email) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield db_1.prisma.user.findUnique({ where: { email } });
+            const sql = "SELECT * FROM users WHERE email = ?";
+            const users = yield (0, db_1.query)(sql, [email]);
+            return users[0];
         });
     }
     updateUserRole(userId, role) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield db_1.prisma.user.update({
-                where: { id: parseInt(userId) },
-                data: { role },
-            });
-            return yield db_1.prisma.user.findUnique({ where: { id: parseInt(userId) } });
+            const updateSql = `
+      UPDATE users 
+      SET role = ? 
+      WHERE id = ?
+    `;
+            yield (0, db_1.query)(updateSql, [role, parseInt(userId)]);
+            const getUserSql = "SELECT * FROM users WHERE id = ?";
+            const users = yield (0, db_1.query)(getUserSql, [parseInt(userId)]);
+            return users[0];
         });
     }
     getAllUsers() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log("Fetching all users from the database");
-            // Log the number of users in the database
-            const users = yield db_1.prisma.user.findMany({});
+            const sql = "SELECT * FROM users";
+            const users = yield (0, db_1.query)(sql);
             console.log("Total users in database:", users.length);
-            // Return the list of users
             console.log("Returning all users:", users);
             if (users.length === 0) {
                 console.log("No users found in the database");
@@ -52,7 +72,9 @@ class UserService {
     }
     getUserById(userId) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield db_1.prisma.user.findUnique({ where: { id: parseInt(userId) } });
+            const sql = "SELECT * FROM users WHERE id = ?";
+            const users = yield (0, db_1.query)(sql, [parseInt(userId)]);
+            return users[0];
         });
     }
 }
