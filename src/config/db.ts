@@ -8,14 +8,14 @@ const getDatabaseUrl = () => {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
   }
-  
-  const host = process.env.DB_HOST || "localhost";
-  const port = process.env.DB_PORT || "3306";
-  const username = process.env.DB_USERNAME || "root";
-  const password = process.env.DB_PASSWORD || "password";
-  const database = process.env.DB_DATABASE || "marddb";
-  
-  return `mysql://${username}:${password}@${host}:${port}/${database}`;
+
+  // const host = process.env.DATABASE_HOST || "mysql";
+  // const port = process.env.DATABASE_PORT || "3306";
+  // const username = process.env.DATABASE_USERNAME || "marduser";
+  // const password = process.env.DATABASE_PASSWORD || "mardpassword";
+  // const database = process.env.DATABASE_DATABASE || "marddb";
+
+  return process.env.DATABASE_URL;
 };
 
 export const prisma = new PrismaClient({
@@ -29,9 +29,15 @@ export const prisma = new PrismaClient({
 const connectDB = async () => {
   try {
     await prisma.$connect();
-    console.log(`MySQL Connected via Prisma: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '3306'}`);
+    console.log(
+      `MySQL Connected via Prisma: ${process.env.DATABASE_HOST || "mysql"}:${
+        process.env.DATABASE_PORT || "3306"
+      }`
+    );
   } catch (error) {
-    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error(
+      `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
     process.exit(1);
   }
 };
