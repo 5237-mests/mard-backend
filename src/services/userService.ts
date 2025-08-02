@@ -1,5 +1,5 @@
-import { prisma } from "../config/db";
-import { User, Role } from "../types/prisma";
+import { query } from "../config/db";
+import { User, Role } from "../types/database";
 import { UserService as UserUtility } from "../models/user";
 
 export class UserService {
@@ -13,45 +13,66 @@ export class UserService {
     verificationToken?: string;
   }) {
     const hashedPassword = await UserUtility.hashPassword(userData.password);
-    return await prisma.user.create({
-      data: {
-        ...userData,
-        password: hashedPassword,
-        role: userData.role || 'USER',
-      },
-    });
+    const sql = `
+      INSERT INTO users (name, email, phone, password, role, isVerified, verificationToken)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+      userData.name,
+      userData.email,
+      userData.phone,
+      hashedPassword,
+      userData.role || 'USER',
+      userData.isVerified || false,
+      userData.verificationToken || null
+    ];
+    
+    const result: any = await query(sql, params);
+    
+    // Fetch the newly created user
+    const newUserSql = "SELECT * FROM users WHERE id = ?";
+    const newUsers = await query(newUserSql, [result.insertId]);
+    return newUsers[0] as User;
   }
 
   async findUserByEmail(email: string) {
-    return await prisma.user.findUnique({ where: { email } });
+    const sql = "SELECT * FROM users WHERE email = ?";
+    const users = await query(sql, [email]);
+    return users[0] as User | undefined;
   }
 
   async updateUserRole(
     userId: string,
     role: Role
   ) {
-    await prisma.user.update({
-      where: { id: parseInt(userId) },
-      data: { role },
-    });
-    return await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+    const updateSql = `
+      UPDATE users 
+      SET role = ? 
+      WHERE id = ?
+    `;
+    await query(updateSql, [role, parseInt(userId)]);
+    
+    const getUserSql = "SELECT * FROM users WHERE id = ?";
+    const users = await query(getUserSql, [parseInt(userId)]);
+    return users[0] as User;
   }
 
   async getAllUsers() {
     console.log("Fetching all users from the database");
-    // Log the number of users in the database
-    const users = await prisma.user.findMany({});
+    const sql = "SELECT * FROM users";
+    const users = await query(sql);
     console.log("Total users in database:", users.length);
-    // Return the list of users
     console.log("Returning all users:", users);
     if (users.length === 0) {
       console.log("No users found in the database");
       return [];
     }
-    return users;
+    return users as User[];
   }
 
   async getUserById(userId: string) {
-    return await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+    const sql = "SELECT * FROM users WHERE id = ?";
+    const users = await query(sql, [parseInt(userId)]);
+    return users[0] as User | undefined;
   }
 }

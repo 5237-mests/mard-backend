@@ -1,13 +1,12 @@
-import { Shop as PrismaShop } from "../types/prisma";
-import User from "./user";
+import { Shop as DatabaseShop } from "../types/database";
 
 export interface IShop {
   id: number;
   name: string;
   location: string;
-  shopkeeper?: User;
+  shopkeeperId?: number;
 }
 
-// Export Prisma Shop type as default
-export type Shop = PrismaShop;
+// Export database Shop type as default
+export type Shop = DatabaseShop;
 export default Shop;

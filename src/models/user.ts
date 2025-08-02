@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { User as PrismaUser, Role } from "../types/prisma";
+import { User as DatabaseUser, Role } from "../types/database";
 
 export interface IUser {
   id: number;
@@ -26,6 +26,6 @@ export class UserService {
   }
 }
 
-// Export Prisma User type as default
-export type User = PrismaUser;
+// Export database User type as default
+export type User = DatabaseUser;
 export default User;
