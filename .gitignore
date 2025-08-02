@@ -1,6 +1,5 @@
-!/node_modules/.prisma/client
-/node_modules/
 .DS_Store
 .env
 npm-debug.log
 /src/generated/prisma
+/node_modules
