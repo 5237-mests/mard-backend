@@ -4,7 +4,8 @@
   "description": "Multi-role Access Resource Dashboard",
   "main": "src/app.ts",
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start_dev": "ts-node src/app.ts",
+    "start_prod": "node dist/app.js",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
     "test": "jest"

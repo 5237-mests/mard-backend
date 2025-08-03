@@ -22,17 +22,16 @@ class AuthService {
         return __awaiter(this, void 0, void 0, function* () {
             const hashedPassword = yield user_1.UserService.hashPassword(data.password);
             const sql = `
-      INSERT INTO users (name, email, phone, password, role, isVerified, verificationToken)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (name, email, phone, password, role, verification_token)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
             const params = [
                 data.name,
                 data.email,
                 data.phone,
                 hashedPassword,
-                data.role || 'USER',
-                false,
-                data.verificationToken
+                data.role || "USER",
+                data.verificationToken,
             ];
             const result = yield (0, db_1.query)(sql, params);
             // Fetch the newly created user
@@ -47,7 +46,7 @@ class AuthService {
             const payload = jsonwebtoken_1.default.verify(token, jwtSecret);
             const findUserSql = `
       SELECT * FROM users 
-      WHERE email = ? AND verificationToken = ?
+      WHERE email = ? AND verification_token = ?
     `;
             const users = yield (0, db_1.query)(findUserSql, [payload.email, token]);
             const user = users[0];
@@ -55,7 +54,7 @@ class AuthService {
                 throw new Error("Invalid or expired verification token");
             const updateSql = `
       UPDATE users 
-      SET isVerified = ?, verificationToken = ? 
+      SET is_verified = ?, verification_token = ? 
       WHERE id = ?
     `;
             yield (0, db_1.query)(updateSql, [true, null, user.id]);
@@ -75,7 +74,7 @@ class AuthService {
             const isMatch = yield bcrypt_1.default.compare(password, user.password);
             if (!isMatch)
                 throw new Error("Invalid credentials");
-            if (!user.isVerified)
+            if (!user.is_verified)
                 throw new Error("Email not verified");
             return user;
         });
