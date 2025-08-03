@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+// import cors from "cors";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import healthRoutes from "./routes/healthRoutes";
@@ -8,7 +9,6 @@ import transferRoutes from "./routes/transferRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import connectDB from "./config/db";
-// import path from "path";
 import path from "path";
 
 dotenv.config();
@@ -20,6 +20,13 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 
 connectDB();
+
+// CORS configuration
+// const corsOptions = {
+//   origin: "http://localhost:8080",
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
 
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "../client")));
