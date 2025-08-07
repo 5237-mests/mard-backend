@@ -22,13 +22,13 @@ export class UserService {
       userData.email,
       userData.phone,
       hashedPassword,
-      userData.role || 'USER',
+      userData.role || "USER",
       userData.isVerified || false,
-      userData.verificationToken || null
+      userData.verificationToken || null,
     ];
-    
+
     const result: any = await query(sql, params);
-    
+
     // Fetch the newly created user
     const newUserSql = "SELECT * FROM users WHERE id = ?";
     const newUsers = await query(newUserSql, [result.insertId]);
@@ -41,28 +41,55 @@ export class UserService {
     return users[0] as User | undefined;
   }
 
-  async updateUserRole(
-    userId: string,
-    role: Role
-  ) {
+  async updateUserRole(userId: string, role: Role) {
     const updateSql = `
       UPDATE users 
       SET role = ? 
       WHERE id = ?
     `;
     await query(updateSql, [role, parseInt(userId)]);
-    
+
     const getUserSql = "SELECT * FROM users WHERE id = ?";
     const users = await query(getUserSql, [parseInt(userId)]);
     return users[0] as User;
   }
 
+  async updateUserPassword(userId: string, newPassword: string) {
+    const hashedPassword = await UserUtility.hashPassword(newPassword);
+    const updateSql = `
+      UPDATE users 
+      SET password = ? 
+      WHERE id = ?
+    `;
+    await query(updateSql, [hashedPassword, parseInt(userId)]);
+
+    const getUserSql = "SELECT * FROM users WHERE id = ?";
+    const users = await query(getUserSql, [parseInt(userId)]);
+    return users[0] as User;
+  }
+
+  async updateUserProfile(
+    userId: string,
+    { name, email, phone }: Partial<Pick<User, "name" | "email" | "phone">> = {}
+  ) {
+    const setValues = Object.entries({ name, email, phone })
+      .filter(([_, value]) => value !== undefined)
+      .map(([key, value]) => `${key} = ?`)
+      .join(", ");
+    const updateSql = `
+      UPDATE users 
+      SET ${setValues} 
+      WHERE id = ?
+    `;
+    await query(updateSql, [
+      ...Object.values({ name, email, phone }).filter((v) => v !== undefined),
+      parseInt(userId),
+    ]);
+  }
+
   async getAllUsers() {
-    console.log("Fetching all users from the database");
     const sql = "SELECT * FROM users";
     const users = await query(sql);
-    console.log("Total users in database:", users.length);
-    console.log("Returning all users:", users);
     if (users.length === 0) {
       console.log("No users found in the database");
       return [];

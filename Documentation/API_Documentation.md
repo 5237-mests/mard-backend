@@ -57,7 +57,7 @@ Update user role (admin only).
 - **Body:** `{ role }`
 - **Response:** `User`
 
-### GET `/api/users/`
+### GET `/api/users/all`
 
 List all users (admin only).
 

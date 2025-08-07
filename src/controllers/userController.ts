@@ -35,6 +35,44 @@ class UserController {
     }
   }
 
+  public async updateUserProfile(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
+    try {
+      const userId = req.params.id;
+      const { name, email, phone } = req.body;
+      const updatedUser = await this.userService.updateUserProfile(userId, {
+        name,
+        email,
+        phone,
+      });
+      return res.status(200).json(updatedUser);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error", error });
+    }
+  }
+
+  public async updateUserPassword(
+    req: Request,
+    res: Response
+  ): Promise<Response> {
+    try {
+      const userId = req.params.id;
+      const { newPassword } = req.body;
+      const updatedUser = await this.userService.updateUserPassword(
+        userId,
+        newPassword
+      );
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      return res.status(200).json(updatedUser);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error", error });
+    }
+  }
+
   public async listAllUsers(req: Request, res: Response): Promise<Response> {
     try {
       console.log("Listing all users");
