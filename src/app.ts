@@ -8,7 +8,9 @@ import shopRoutes from "./routes/shopRoutes";
 import transferRoutes from "./routes/transferRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
+import brandroutes from "./routes/brandRoutes";
 import connectDB from "./config/db";
+
 import path from "path";
 
 dotenv.config();
@@ -34,6 +36,7 @@ app.use(express.static(path.join(__dirname, "../client")));
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/brands", brandroutes);
 app.use("/api/check", healthRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/transfer", transferRoutes);

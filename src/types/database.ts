@@ -4,15 +4,15 @@
 // Enums
 export enum Role {
   ADMIN = "ADMIN",
-  SHOPKEEPER = "SHOPKEEPER", 
+  SHOPKEEPER = "SHOPKEEPER",
   STOREKEEPER = "STOREKEEPER",
-  USER = "USER"
+  USER = "USER",
 }
 
 export enum TransferRequestStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
-  REJECTED = "REJECTED"
+  REJECTED = "REJECTED",
 }
 
 // Base interfaces matching database tables
@@ -25,6 +25,15 @@ export interface User {
   role: Role;
   isVerified: boolean;
   verificationToken: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+// Brand interface
+export interface Brand {
+  id: number;
+  name: string;
+  slug: string;
   created_at?: Date;
   updated_at?: Date;
 }
