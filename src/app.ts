@@ -9,6 +9,7 @@ import transferRoutes from "./routes/transferRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import brandroutes from "./routes/brandRoutes";
+import categoryRoutes from "./routes/categoryRoutes";
 import connectDB from "./config/db";
 
 import path from "path";
@@ -37,6 +38,7 @@ app.use(express.static(path.join(__dirname, "../client")));
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/brands", brandroutes);
+app.use("/api/category", categoryRoutes);
 app.use("/api/check", healthRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/transfer", transferRoutes);

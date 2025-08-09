@@ -41,9 +41,21 @@ export interface Brand {
 export interface Item {
   id: number;
   name: string;
-  code: string;
-  unit: string;
+  model: string;
   description: string | null;
+  price: number;
+  brand_id: number;
+  category_id: number | null;
+  stock_quantity: number;
+  minimum_stock: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  parent_id: number | null;
   created_at?: Date;
   updated_at?: Date;
 }
