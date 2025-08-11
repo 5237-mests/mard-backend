@@ -1,5 +1,6 @@
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import logger from "./logger";
 
 dotenv.config();
 
@@ -38,13 +39,13 @@ export const pool = mysql.createPool({
 const connectDB = async () => {
   try {
     const connection = await pool.getConnection();
-    console.log(
+    logger.info(
       `MySQL Connected: ${getDatabaseConfig().host}:${getDatabaseConfig().port}`
     );
     connection.release();
   } catch (error) {
-    console.error(
-      `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+    logger.error(
+      `Database connection error: ${error instanceof Error ? error.message : "Unknown error"}`
     );
     process.exit(1);
   }
@@ -56,7 +57,7 @@ export const query = async (sql: string, params?: any[]): Promise<any> => {
     const [results] = await pool.execute(sql, params);
     return results;
   } catch (error) {
-    console.error("Database query error:", error);
+    logger.error("Database query error:", error);
     throw error;
   }
 };
