@@ -46,13 +46,11 @@ class AuthController {
       // const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
       const verifyUrl = `http://localhost:5000/api/auth/verify-email?token=${verificationToken}`;
-      console.log("Verification URL:", verifyUrl);
       await sendEmail(
         email,
         "Verify your email",
         `Please verify your email by clicking the following link: ${verifyUrl}`
       );
-      console.log("Email send:");
       res.status(201).json({
         message:
           "User registered. Please check your email to verify your account.",

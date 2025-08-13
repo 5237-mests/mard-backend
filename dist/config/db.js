@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.transaction = exports.query = exports.pool = void 0;
 const promise_1 = __importDefault(require("mysql2/promise"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const logger_1 = __importDefault(require("./logger"));
 dotenv_1.default.config();
 // Construct DATABASE_URL if not provided directly
 const getDatabaseConfig = () => {
@@ -43,11 +44,11 @@ exports.pool = promise_1.default.createPool(Object.assign(Object.assign({}, getD
 const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const connection = yield exports.pool.getConnection();
-        console.log(`MySQL Connected: ${getDatabaseConfig().host}:${getDatabaseConfig().port}`);
+        logger_1.default.info(`MySQL Connected: ${getDatabaseConfig().host}:${getDatabaseConfig().port}`);
         connection.release();
     }
     catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : "Unknown error"}`);
+        logger_1.default.error(`Database connection error: ${error instanceof Error ? error.message : "Unknown error"}`);
         process.exit(1);
     }
 });
@@ -58,7 +59,7 @@ const query = (sql, params) => __awaiter(void 0, void 0, void 0, function* () {
         return results;
     }
     catch (error) {
-        console.error("Database query error:", error);
+        logger_1.default.error("Database query error:", error);
         throw error;
     }
 });

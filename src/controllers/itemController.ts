@@ -108,10 +108,9 @@ class ItemController {
     try {
       const itemService = new ItemService();
       await itemService.deleteItem(itemId);
-      res.status(204).send(); // No content
+      res.status(200).json({ message: "Item deleted successfully" });
     } catch (error) {
       console.error("Error deleting item:", error);
-      res.status(500).json({ error: "Failed to delete item" });
       res.status(500).json({ error: "Failed to delete item" });
     }
   }

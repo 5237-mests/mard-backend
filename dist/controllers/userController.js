@@ -45,6 +45,39 @@ class UserController {
             }
         });
     }
+    updateUserProfile(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.params.id;
+                const { name, email, phone } = req.body;
+                const updatedUser = yield this.userService.updateUserProfile(userId, {
+                    name,
+                    email,
+                    phone,
+                });
+                return res.status(200).json(updatedUser);
+            }
+            catch (error) {
+                return res.status(500).json({ message: "Server error", error });
+            }
+        });
+    }
+    updateUserPassword(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.params.id;
+                const { newPassword } = req.body;
+                const updatedUser = yield this.userService.updateUserPassword(userId, newPassword);
+                if (!updatedUser) {
+                    return res.status(404).json({ message: "User not found" });
+                }
+                return res.status(200).json(updatedUser);
+            }
+            catch (error) {
+                return res.status(500).json({ message: "Server error", error });
+            }
+        });
+    }
     listAllUsers(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
