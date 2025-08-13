@@ -27,8 +27,10 @@ export class BrandService {
 
   // Update a brand by ID
   async updateBrand(brandId: number, brandData: Brand) {
-    const sql = "UPDATE brands SET name = ? WHERE id = ?";
-    await query(sql, [brandData.name, brandId]);
+    // Update brand in the database
+    const params = [brandData.name, brandData.slug, brandId];
+    const sql = "UPDATE brands SET name = ?, slug = ? WHERE id = ?";
+    await query(sql, params);
     return { message: "Brand updated successfully" };
   }
 }
