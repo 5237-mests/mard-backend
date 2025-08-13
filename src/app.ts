@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";
+// import cors from "cors";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -15,7 +15,11 @@ import itemRoutes from "./routes/itemRoutes";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import { logStream } from "./config/logger";
-import { apiLogger, errorLogger, performanceLogger } from "./middleware/apiLogger";
+import {
+  apiLogger,
+  errorLogger,
+  performanceLogger,
+} from "./middleware/apiLogger";
 
 import path from "path";
 
@@ -30,14 +34,14 @@ app.use(express.json());
 connectDB();
 
 // CORS configuration
-const corsOptions = {
-  origin: "http://localhost:8080",
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: "http://localhost:8080",
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
 
 // Logging middleware
-app.use(morgan('combined', { stream: logStream }));
+app.use(morgan("combined", { stream: logStream }));
 app.use(apiLogger);
 app.use(performanceLogger);
 

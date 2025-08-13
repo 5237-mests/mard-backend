@@ -25,9 +25,9 @@ class UserService {
                 userData.email,
                 userData.phone,
                 hashedPassword,
-                userData.role || 'USER',
+                userData.role || "USER",
                 userData.isVerified || false,
-                userData.verificationToken || null
+                userData.verificationToken || null,
             ];
             const result = yield (0, db_1.query)(sql, params);
             // Fetch the newly created user
@@ -56,13 +56,41 @@ class UserService {
             return users[0];
         });
     }
+    updateUserPassword(userId, newPassword) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const hashedPassword = yield user_1.UserService.hashPassword(newPassword);
+            const updateSql = `
+      UPDATE users 
+      SET password = ? 
+      WHERE id = ?
+    `;
+            yield (0, db_1.query)(updateSql, [hashedPassword, parseInt(userId)]);
+            const getUserSql = "SELECT * FROM users WHERE id = ?";
+            const users = yield (0, db_1.query)(getUserSql, [parseInt(userId)]);
+            return users[0];
+        });
+    }
+    updateUserProfile(userId_1) {
+        return __awaiter(this, arguments, void 0, function* (userId, { name, email, phone } = {}) {
+            const setValues = Object.entries({ name, email, phone })
+                .filter(([_, value]) => value !== undefined)
+                .map(([key, value]) => `${key} = ?`)
+                .join(", ");
+            const updateSql = `
+      UPDATE users 
+      SET ${setValues} 
+      WHERE id = ?
+    `;
+            yield (0, db_1.query)(updateSql, [
+                ...Object.values({ name, email, phone }).filter((v) => v !== undefined),
+                parseInt(userId),
+            ]);
+        });
+    }
     getAllUsers() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("Fetching all users from the database");
             const sql = "SELECT * FROM users";
             const users = yield (0, db_1.query)(sql);
-            console.log("Total users in database:", users.length);
-            console.log("Returning all users:", users);
             if (users.length === 0) {
                 console.log("No users found in the database");
                 return [];

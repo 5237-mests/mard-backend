@@ -14,4 +14,8 @@ router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.auth
 router.put("/role/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.updateUserRole.bind(userController));
 // Route to get current user information
 router.get("/me/:id", authMiddleware_1.authenticateToken, userController.getUserDetails.bind(userController));
+// Route to update user profile
+router.put("/profile/:id", authMiddleware_1.authenticateToken, userController.updateUserProfile.bind(userController));
+// Route to update user password
+router.put("/password/:id", authMiddleware_1.authenticateToken, userController.updateUserPassword.bind(userController));
 exports.default = router;
