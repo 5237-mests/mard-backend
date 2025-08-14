@@ -75,9 +75,7 @@ class UserController {
 
   public async listAllUsers(req: Request, res: Response): Promise<Response> {
     try {
-      console.log("Listing all users");
       const users = await this.userService.getAllUsers();
-      console.log("Listing all users:", users.length, "users found");
       return res.status(200).json(users);
     } catch (error) {
       console.error("Error in listAllUsers:", error);
@@ -87,6 +85,20 @@ class UserController {
       return res
         .status(500)
         .json({ message: "Server error *** from controller", error });
+    }
+  }
+
+  // Delete user
+  public async deleteUser(req: Request, res: Response): Promise<Response> {
+    try {
+      const userId = req.params.id;
+      const deletedUser = await this.userService.deleteUser(userId);
+      if (!deletedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      return res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error", error });
     }
   }
 }
