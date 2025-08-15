@@ -1,7 +1,131 @@
 import { query, transaction } from "../config/db";
-import { ISaleItem, Sale, SaleWithRelations } from "../types/database";
+import { ISaleItem, Sale, SaleWithRelations, Shop } from "../types/database";
 
 export class ShopService {
+  /**
+   * Creates a new shop in the database.
+   * @param name The name of the shop.
+   * @param location The location of the shop.
+   * @returns The newly created shop object.
+   */
+  public static async createShop(
+    name: string,
+    location: string
+  ): Promise<Shop[]> {
+    const sql = "INSERT INTO shops (name, location) VALUES (?, ?)";
+    const params = [name, location];
+    try {
+      const result = await query(sql, params);
+      return result;
+    } catch (error) {
+      console.error("Error creating shop:", error);
+      throw new Error("Could not create shop.");
+    }
+  }
+
+  /**
+   * Retrieves all shops from the database.
+   * @returns A list of all shops.
+   */
+  public static async getShops(): Promise<Shop[]> {
+    const sql = "SELECT * FROM shops";
+    try {
+      const rows = await query(sql);
+      return rows;
+    } catch (error) {
+      console.error("Error fetching shops:", error);
+      throw new Error("Could not fetch shops.");
+    }
+  }
+
+  /**
+   * Retrieves a single shop by its ID.
+   * @param id The ID of the shop to retrieve.
+   * @returns The shop object or null if not found.
+   */
+  public static async getShopById(id: number): Promise<Shop[]> {
+    const sql = "SELECT * FROM shops WHERE id = ?";
+    try {
+      const rows = await query(sql, [id]);
+      if (rows.length === 0) {
+        return [];
+      }
+      return rows;
+    } catch (error) {
+      console.error("Error fetching shop by ID:", error);
+      throw new Error("Could not fetch shop.");
+    }
+  }
+
+  /**
+   * Updates an existing shop.
+   * @param id The ID of the shop to update.
+   * @param name The new name of the shop (optional).
+   * @param location The new location of the shop (optional).
+   * @returns The updated shop object or null if the shop was not found.
+   */
+  public static async updateShop(
+    id: number,
+    name?: string,
+    location?: string
+  ): Promise<Shop[]> {
+    const updates = [];
+    const params = [];
+    if (name !== undefined) {
+      updates.push("name = ?");
+      params.push(name);
+    }
+    if (location !== undefined) {
+      updates.push("location = ?");
+      params.push(location);
+    }
+
+    if (updates.length === 0) {
+      throw new Error("No fields provided to update.");
+    }
+
+    const sql = `UPDATE shops SET ${updates.join(", ")} WHERE id = ?`;
+    params.push(id);
+
+    try {
+      const result = await query(sql, params);
+      if (result.affectedRows === 0) {
+        return [];
+      }
+      return this.getShopById(id);
+    } catch (error) {
+      console.error("Error updating shop:", error);
+      throw new Error("Could not update shop.");
+    }
+  }
+
+  /**
+   * Deletes a shop by its ID.
+   * @param id The ID of the shop to delete.
+   * @returns A boolean indicating if the deletion was successful.
+   */
+  public static async deleteShop(id: number): Promise<boolean> {
+    const sql = "DELETE FROM shops WHERE id = ?";
+    try {
+      const result = await query(sql, [id]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error("Error deleting shop:", error);
+      throw new Error("Could not delete shop.");
+    }
+  }
+
+  /**
+   * Process a sale in a shop by updating shop item quantities and
+   * creating a sale record.
+   *
+   * @param shopId The ID of the shop where the sale was made.
+   * @param items An array of items sold, each containing an itemId and
+   *              quantitySold.
+   * @param soldBy The ID of the user who sold the items.
+   * @returns A SaleWithRelations object representing the newly created sale.
+   * @throws Error if the shop or seller are not found.
+   */
   async processSale(
     shopId: string,
     items: { itemId: string; quantitySold: number }[],
@@ -14,16 +138,22 @@ export class ShopService {
           SELECT * FROM shop_items 
           WHERE shopId = ? AND itemId = ?
         `;
-        const [shopItems] = await connection.execute(findShopItemSql, [parseInt(shopId), parseInt(itemId)]);
+        const [shopItems] = await connection.execute(findShopItemSql, [
+          parseInt(shopId),
+          parseInt(itemId),
+        ]);
         const shopItem = (shopItems as any[])[0];
-        
+
         if (shopItem) {
           const updateQuantitySql = `
             UPDATE shop_items 
             SET quantity = quantity - ? 
             WHERE id = ?
           `;
-          await connection.execute(updateQuantitySql, [quantitySold, shopItem.id]);
+          await connection.execute(updateQuantitySql, [
+            quantitySold,
+            shopItem.id,
+          ]);
         }
       }
 
@@ -35,14 +165,14 @@ export class ShopService {
       const sellerSql = "SELECT * FROM users WHERE id = ?";
       const [sellers] = await connection.execute(sellerSql, [parseInt(soldBy)]);
       const seller = (sellers as any[])[0];
-      
+
       if (!shop || !seller) {
         throw new Error("Shop or seller not found");
       }
 
-      const saleItems: ISaleItem[] = items.map(item => ({
+      const saleItems: ISaleItem[] = items.map((item) => ({
         itemId: parseInt(item.itemId),
-        quantitySold: item.quantitySold
+        quantitySold: item.quantitySold,
       }));
 
       // Create sale record
@@ -53,7 +183,7 @@ export class ShopService {
       const [saleResult] = await connection.execute(createSaleSql, [
         shop.id,
         JSON.stringify(saleItems),
-        seller.id
+        seller.id,
       ]);
 
       // Fetch the created sale with relations
@@ -76,14 +206,14 @@ export class ShopService {
         shop: {
           id: sale.shopId,
           name: sale.shop_name,
-          location: sale.shop_location
+          location: sale.shop_location,
         },
         soldBy: {
           id: sale.soldById,
           name: sale.soldBy_name,
-          email: sale.soldBy_email
+          email: sale.soldBy_email,
         },
-        items: JSON.parse(sale.items)
+        items: JSON.parse(sale.items),
       } as SaleWithRelations;
     });
   }
@@ -99,23 +229,23 @@ export class ShopService {
       JOIN users u ON s.soldById = u.id
       ORDER BY s.soldAt DESC
     `;
-    
+
     const salesData = await query(sql);
     let sales = salesData.map((sale: any) => ({
       ...sale,
       shop: {
         id: sale.shopId,
         name: sale.shop_name,
-        location: sale.shop_location
+        location: sale.shop_location,
       },
       soldBy: {
         id: sale.soldById,
         name: sale.soldBy_name,
-        email: sale.soldBy_email
+        email: sale.soldBy_email,
       },
-      items: JSON.parse(sale.items)
+      items: JSON.parse(sale.items),
     })) as SaleWithRelations[];
-    
+
     if (itemId) {
       sales = sales.filter((sale) => {
         const saleItems = sale.items as unknown as ISaleItem[];

@@ -91,7 +91,6 @@ export class UserService {
     const sql = "SELECT * FROM users";
     const users = await query(sql);
     if (users.length === 0) {
-      console.log("No users found in the database");
       return [];
     }
     return users as User[];
@@ -101,5 +100,12 @@ export class UserService {
     const sql = "SELECT * FROM users WHERE id = ?";
     const users = await query(sql, [parseInt(userId)]);
     return users[0] as User | undefined;
+  }
+
+  // delete user
+  async deleteUser(userId: string) {
+    const sql = "DELETE FROM users WHERE id = ?";
+    await query(sql, [parseInt(userId)]);
+    return true;
   }
 }

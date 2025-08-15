@@ -22,8 +22,10 @@ const getDatabaseConfig = () => {
     host: process.env.DATABASE_HOST || process.env.DB_HOST || "mysql",
     port: parseInt(process.env.DATABASE_PORT || process.env.DB_PORT || "3306"),
     user: process.env.DATABASE_USERNAME || process.env.DB_USERNAME || "root",
-    password: process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD || "password",
-    database: process.env.DATABASE_DATABASE || process.env.DB_DATABASE || "marddb",
+    password:
+      process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD || "password",
+    database:
+      process.env.DATABASE_DATABASE || process.env.DB_DATABASE || "marddb",
   };
 };
 
@@ -45,7 +47,9 @@ const connectDB = async () => {
     connection.release();
   } catch (error) {
     logger.error(
-      `Database connection error: ${error instanceof Error ? error.message : "Unknown error"}`
+      `Database connection error: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
     );
     process.exit(1);
   }
@@ -63,7 +67,9 @@ export const query = async (sql: string, params?: any[]): Promise<any> => {
 };
 
 // Transaction helper function
-export const transaction = async (callback: (connection: mysql.PoolConnection) => Promise<any>) => {
+export const transaction = async (
+  callback: (connection: mysql.PoolConnection) => Promise<any>
+) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();

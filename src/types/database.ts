@@ -64,7 +64,6 @@ export interface Shop {
   id: number;
   name: string;
   location: string;
-  shopkeeperId: number | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -73,7 +72,6 @@ export interface Store {
   id: number;
   name: string;
   location: string;
-  storekeeperId: number | null;
   created_at?: Date;
   updated_at?: Date;
 }

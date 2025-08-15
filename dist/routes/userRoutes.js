@@ -18,4 +18,6 @@ router.get("/me/:id", authMiddleware_1.authenticateToken, userController.getUser
 router.put("/profile/:id", authMiddleware_1.authenticateToken, userController.updateUserProfile.bind(userController));
 // Route to update user password
 router.put("/password/:id", authMiddleware_1.authenticateToken, userController.updateUserPassword.bind(userController));
+// Route to delete a user (only admin can do this)
+router.delete("/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.deleteUser.bind(userController));
 exports.default = router;

@@ -42,4 +42,12 @@ router.put(
   userController.updateUserPassword.bind(userController)
 );
 
+// Route to delete a user (only admin can do this)
+router.delete(
+  "/:id",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  userController.deleteUser.bind(userController)
+);
+
 export default router;
