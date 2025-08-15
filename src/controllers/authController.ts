@@ -45,7 +45,7 @@ class AuthController {
       // Send verification email
       // const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
-      const verifyUrl = `http://localhost:5000/api/auth/verify-email?token=${verificationToken}`;
+      const verifyUrl = `https://mardtrading.com/api/auth/verify-email?token=${verificationToken}`;
       await sendEmail(
         email,
         "Verify your email",
