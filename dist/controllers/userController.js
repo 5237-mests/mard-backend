@@ -81,9 +81,7 @@ class UserController {
     listAllUsers(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log("Listing all users");
                 const users = yield this.userService.getAllUsers();
-                console.log("Listing all users:", users.length, "users found");
                 return res.status(200).json(users);
             }
             catch (error) {
@@ -94,6 +92,22 @@ class UserController {
                 return res
                     .status(500)
                     .json({ message: "Server error *** from controller", error });
+            }
+        });
+    }
+    // Delete user
+    deleteUser(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userId = req.params.id;
+                const deletedUser = yield this.userService.deleteUser(userId);
+                if (!deletedUser) {
+                    return res.status(404).json({ message: "User not found" });
+                }
+                return res.status(200).json({ message: "User deleted successfully" });
+            }
+            catch (error) {
+                return res.status(500).json({ message: "Server error", error });
             }
         });
     }

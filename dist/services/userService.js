@@ -92,7 +92,6 @@ class UserService {
             const sql = "SELECT * FROM users";
             const users = yield (0, db_1.query)(sql);
             if (users.length === 0) {
-                console.log("No users found in the database");
                 return [];
             }
             return users;
@@ -103,6 +102,14 @@ class UserService {
             const sql = "SELECT * FROM users WHERE id = ?";
             const users = yield (0, db_1.query)(sql, [parseInt(userId)]);
             return users[0];
+        });
+    }
+    // delete user
+    deleteUser(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "DELETE FROM users WHERE id = ?";
+            yield (0, db_1.query)(sql, [parseInt(userId)]);
+            return true;
         });
     }
 }

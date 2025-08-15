@@ -49,7 +49,7 @@ class AuthController {
                 });
                 // Send verification email
                 // const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-                const verifyUrl = `http://localhost:5000/api/auth/verify-email?token=${verificationToken}`;
+                const verifyUrl = `https://mardtrading.com/api/auth/verify-email?token=${verificationToken}`;
                 yield (0, emailService_1.sendEmail)(email, "Verify your email", `Please verify your email by clicking the following link: ${verifyUrl}`);
                 res.status(201).json({
                     message: "User registered. Please check your email to verify your account.",

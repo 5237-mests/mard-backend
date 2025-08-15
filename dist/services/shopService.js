@@ -12,6 +12,130 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShopService = void 0;
 const db_1 = require("../config/db");
 class ShopService {
+    /**
+     * Creates a new shop in the database.
+     * @param name The name of the shop.
+     * @param location The location of the shop.
+     * @returns The newly created shop object.
+     */
+    static createShop(name, location) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "INSERT INTO shops (name, location) VALUES (?, ?)";
+            const params = [name, location];
+            try {
+                const result = yield (0, db_1.query)(sql, params);
+                return result;
+            }
+            catch (error) {
+                console.error("Error creating shop:", error);
+                throw new Error("Could not create shop.");
+            }
+        });
+    }
+    /**
+     * Retrieves all shops from the database.
+     * @returns A list of all shops.
+     */
+    static getShops() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "SELECT * FROM shops";
+            try {
+                const rows = yield (0, db_1.query)(sql);
+                return rows;
+            }
+            catch (error) {
+                console.error("Error fetching shops:", error);
+                throw new Error("Could not fetch shops.");
+            }
+        });
+    }
+    /**
+     * Retrieves a single shop by its ID.
+     * @param id The ID of the shop to retrieve.
+     * @returns The shop object or null if not found.
+     */
+    static getShopById(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "SELECT * FROM shops WHERE id = ?";
+            try {
+                const rows = yield (0, db_1.query)(sql, [id]);
+                if (rows.length === 0) {
+                    return [];
+                }
+                return rows;
+            }
+            catch (error) {
+                console.error("Error fetching shop by ID:", error);
+                throw new Error("Could not fetch shop.");
+            }
+        });
+    }
+    /**
+     * Updates an existing shop.
+     * @param id The ID of the shop to update.
+     * @param name The new name of the shop (optional).
+     * @param location The new location of the shop (optional).
+     * @returns The updated shop object or null if the shop was not found.
+     */
+    static updateShop(id, name, location) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const updates = [];
+            const params = [];
+            if (name !== undefined) {
+                updates.push("name = ?");
+                params.push(name);
+            }
+            if (location !== undefined) {
+                updates.push("location = ?");
+                params.push(location);
+            }
+            if (updates.length === 0) {
+                throw new Error("No fields provided to update.");
+            }
+            const sql = `UPDATE shops SET ${updates.join(", ")} WHERE id = ?`;
+            params.push(id);
+            try {
+                const result = yield (0, db_1.query)(sql, params);
+                if (result.affectedRows === 0) {
+                    return [];
+                }
+                return this.getShopById(id);
+            }
+            catch (error) {
+                console.error("Error updating shop:", error);
+                throw new Error("Could not update shop.");
+            }
+        });
+    }
+    /**
+     * Deletes a shop by its ID.
+     * @param id The ID of the shop to delete.
+     * @returns A boolean indicating if the deletion was successful.
+     */
+    static deleteShop(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "DELETE FROM shops WHERE id = ?";
+            try {
+                const result = yield (0, db_1.query)(sql, [id]);
+                return result.affectedRows > 0;
+            }
+            catch (error) {
+                console.error("Error deleting shop:", error);
+                throw new Error("Could not delete shop.");
+            }
+        });
+    }
+    /**
+     * Process a sale in a shop by updating shop item quantities and
+     * creating a sale record.
+     *
+     * @param shopId The ID of the shop where the sale was made.
+     * @param items An array of items sold, each containing an itemId and
+     *              quantitySold.
+     * @param soldBy The ID of the user who sold the items.
+     * @returns A SaleWithRelations object representing the newly created sale.
+     * @throws Error if the shop or seller are not found.
+     */
     processSale(shopId, items, soldBy) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield (0, db_1.transaction)((connection) => __awaiter(this, void 0, void 0, function* () {
@@ -21,7 +145,10 @@ class ShopService {
           SELECT * FROM shop_items 
           WHERE shopId = ? AND itemId = ?
         `;
-                    const [shopItems] = yield connection.execute(findShopItemSql, [parseInt(shopId), parseInt(itemId)]);
+                    const [shopItems] = yield connection.execute(findShopItemSql, [
+                        parseInt(shopId),
+                        parseInt(itemId),
+                    ]);
                     const shopItem = shopItems[0];
                     if (shopItem) {
                         const updateQuantitySql = `
@@ -29,7 +156,10 @@ class ShopService {
             SET quantity = quantity - ? 
             WHERE id = ?
           `;
-                        yield connection.execute(updateQuantitySql, [quantitySold, shopItem.id]);
+                        yield connection.execute(updateQuantitySql, [
+                            quantitySold,
+                            shopItem.id,
+                        ]);
                     }
                 }
                 // Verify shop and seller exist
@@ -42,9 +172,9 @@ class ShopService {
                 if (!shop || !seller) {
                     throw new Error("Shop or seller not found");
                 }
-                const saleItems = items.map(item => ({
+                const saleItems = items.map((item) => ({
                     itemId: parseInt(item.itemId),
-                    quantitySold: item.quantitySold
+                    quantitySold: item.quantitySold,
                 }));
                 // Create sale record
                 const createSaleSql = `
@@ -54,7 +184,7 @@ class ShopService {
                 const [saleResult] = yield connection.execute(createSaleSql, [
                     shop.id,
                     JSON.stringify(saleItems),
-                    seller.id
+                    seller.id,
                 ]);
                 // Fetch the created sale with relations
                 const saleId = saleResult.insertId;
@@ -73,11 +203,11 @@ class ShopService {
                 return Object.assign(Object.assign({}, sale), { shop: {
                         id: sale.shopId,
                         name: sale.shop_name,
-                        location: sale.shop_location
+                        location: sale.shop_location,
                     }, soldBy: {
                         id: sale.soldById,
                         name: sale.soldBy_name,
-                        email: sale.soldBy_email
+                        email: sale.soldBy_email,
                     }, items: JSON.parse(sale.items) });
             }));
         });
@@ -98,11 +228,11 @@ class ShopService {
             let sales = salesData.map((sale) => (Object.assign(Object.assign({}, sale), { shop: {
                     id: sale.shopId,
                     name: sale.shop_name,
-                    location: sale.shop_location
+                    location: sale.shop_location,
                 }, soldBy: {
                     id: sale.soldById,
                     name: sale.soldBy_name,
-                    email: sale.soldBy_email
+                    email: sale.soldBy_email,
                 }, items: JSON.parse(sale.items) })));
             if (itemId) {
                 sales = sales.filter((sale) => {
