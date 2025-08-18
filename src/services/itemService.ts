@@ -40,10 +40,12 @@ export class ItemService {
       item.price,
       item.brand_id,
       item.category_id,
-      item.stock_quantity,
+      // item.stock_quantity,
       item.minimum_stock,
     ];
-    const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    // const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
     const result = await query(sql, params);
     return result;
   }
