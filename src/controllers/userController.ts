@@ -21,6 +21,23 @@ class UserController {
     }
   }
 
+  public async getShopkeepers(req: Request, res: Response): Promise<Response> {
+    try {
+      const { role } = req.query;
+      if (role && role !== "shopkeeper") {
+        return res
+          .status(400)
+          .json({
+            message: "Invalid role parameter. Only shopkeeper is supported.'",
+          });
+      }
+      const shopkeepers = await this.userService.getShopkeepers();
+      return res.status(200).json(shopkeepers);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error", error });
+    }
+  }
+
   public async updateUserRole(req: Request, res: Response): Promise<Response> {
     try {
       const userId = req.params.id;

@@ -46,7 +46,7 @@ export interface Item {
   price: number;
   brand_id: number;
   category_id: number | null;
-  stock_quantity: number;
+  // stock_quantity: number;
   minimum_stock: number;
   created_at?: Date;
   updated_at?: Date;

@@ -102,6 +102,13 @@ export class UserService {
     return users[0] as User | undefined;
   }
 
+  // get getShopkeepers
+  async getShopkeepers() {
+    const sql = "SELECT * FROM users WHERE role = 'SHOPKEEPER'";
+    const users = await query(sql);
+    return users;
+  }
+
   // delete user
   async deleteUser(userId: string) {
     const sql = "DELETE FROM users WHERE id = ?";

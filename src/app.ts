@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-// import cors from "cors";
+import cors from "cors";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -13,6 +13,8 @@ import inventoryRoutes from "./routes/inventoryRoutes";
 import brandroutes from "./routes/brandRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
 import itemRoutes from "./routes/itemRoutes";
+import shopItemRoutes from "./routes/shopItemRoute";
+import shopShopKeeperRoutes from "./routes/ShopShopkeeperRoute";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import { logStream } from "./config/logger";
@@ -35,11 +37,11 @@ app.use(express.json());
 connectDB();
 
 // CORS configuration
-// const corsOptions = {
-//   origin: "http://localhost:8080",
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
+const corsOptions = {
+  origin: "http://localhost:8080",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 // Logging middleware
 app.use(morgan("combined", { stream: logStream }));
@@ -55,6 +57,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/brands", brandroutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/items", itemRoutes);
+app.use("/api/shopitems", shopItemRoutes);
+app.use("/api/shop-shopkeeper", shopShopKeeperRoutes);
 app.use("/api/check", healthRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/store", storeRoutes);
