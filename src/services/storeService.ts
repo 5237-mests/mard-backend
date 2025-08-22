@@ -28,7 +28,9 @@ export class StoreService {
    * @returns A list of all stores.
    */
   public static async getStores(): Promise<Store[]> {
-    const sql = "SELECT * FROM stores";
+    // location as address
+    const sql = "SELECT id, name, location AS address FROM stores";
+    // const sql = "SELECT * FROM stores";
     try {
       const rows = await query(sql);
       return rows;

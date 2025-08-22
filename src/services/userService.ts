@@ -109,6 +109,20 @@ export class UserService {
     return users;
   }
 
+  // get getStorekeepers
+  async getStorekeepers() {
+    const sql = "SELECT * FROM users WHERE role = 'STOREKEEPER'";
+    const users = await query(sql);
+    return users;
+  }
+
+  // get users by role
+  async getUsersByRole(role: Role) {
+    const sql = "SELECT * FROM users WHERE role = ?";
+    const users = await query(sql, [role]);
+    return users;
+  }
+
   // delete user
   async deleteUser(userId: string) {
     const sql = "DELETE FROM users WHERE id = ?";
