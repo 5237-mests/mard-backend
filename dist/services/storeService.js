@@ -38,7 +38,9 @@ class StoreService {
      */
     static getStores() {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = "SELECT * FROM stores";
+            // location as address
+            const sql = "SELECT id, name, location AS address FROM stores";
+            // const sql = "SELECT * FROM stores";
             try {
                 const rows = yield (0, db_1.query)(sql);
                 return rows;
@@ -96,9 +98,9 @@ class StoreService {
             params.push(id);
             try {
                 const result = yield (0, db_1.query)(sql, params);
-                if (result.affectedRows === 0) {
-                    return [];
-                }
+                // if (result.affectedRows === 0) {
+                //   return [];
+                // }
                 return this.getStoreById(id);
             }
             catch (error) {
@@ -117,7 +119,8 @@ class StoreService {
             const sql = "DELETE FROM stores WHERE id = ?";
             try {
                 const result = yield (0, db_1.query)(sql, [id]);
-                return result.affectedRows > 0;
+                // return result.affectedRows > 0;
+                return true;
             }
             catch (error) {
                 console.error("Error deleting store:", error);

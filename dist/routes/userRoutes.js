@@ -10,6 +10,10 @@ const router = express_1.default.Router();
 const userController = new userController_1.default();
 // Route to get all users
 router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.listAllUsers.bind(userController));
+// Route to get shopekeepers from users
+router.get("/", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.getShopkeepers.bind(userController));
+// Route to get users by role
+router.get("/:role", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.getUsersByRole.bind(userController));
 // Route to update a user's role (only admin can do this)
 router.put("/role/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.updateUserRole.bind(userController));
 // Route to get current user information

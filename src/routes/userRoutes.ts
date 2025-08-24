@@ -13,6 +13,22 @@ router.get(
   userController.listAllUsers.bind(userController)
 );
 
+// Route to get shopekeepers from users
+router.get(
+  "/",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  userController.getShopkeepers.bind(userController)
+);
+
+// Route to get users by role
+router.get(
+  "/:role",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  userController.getUsersByRole.bind(userController)
+);
+
 // Route to update a user's role (only admin can do this)
 router.put(
   "/role/:id",

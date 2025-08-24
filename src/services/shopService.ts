@@ -23,18 +23,49 @@ export class ShopService {
     }
   }
 
-  /**
-   * Retrieves all shops from the database.
-   * @returns A list of all shops.
-   */
-  public static async getShops(): Promise<Shop[]> {
-    const sql = "SELECT * FROM shops";
+  public static async getShops() {
+    const sql = `
+      SELECT 
+        s.id, s.name, s.location,
+        COALESCE(
+          JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'id', u.id,
+              'name', u.name,
+              'email', u.email,
+              'role', u.role,
+              'phone', u.phone
+            )
+          ),
+          '[]'
+        ) as shopkeepers
+      FROM shops s
+      LEFT JOIN shop_shopkeepers sk ON s.id = sk.shop_id
+      LEFT JOIN users u ON sk.user_id = u.id
+      GROUP BY s.id, s.name, s.location
+      HAVING COUNT(u.id) > 0 OR COUNT(*) > 0
+    `;
     try {
       const rows = await query(sql);
-      return rows;
+      return rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        address: row.location,
+        shopkeepers: JSON.parse(row.shopkeepers).map((sk: any) => ({
+          id: sk.id,
+          name: sk.name,
+          email: sk.email,
+          role: sk.role,
+          phone: sk.phone,
+        })),
+      }));
     } catch (error) {
-      console.error("Error fetching shops:", error);
-      throw new Error("Could not fetch shops.");
+      console.error("Error fetching shops with shopkeepers:", error);
+      throw new Error(
+        `Error fetching shops with shopkeepers: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   }
 
@@ -89,9 +120,9 @@ export class ShopService {
 
     try {
       const result = await query(sql, params);
-      if (result.affectedRows === 0) {
-        return [];
-      }
+      // if (result["affectedRows"] === 0) {
+      //   return [];
+      // }
       return this.getShopById(id);
     } catch (error) {
       console.error("Error updating shop:", error);
@@ -108,7 +139,8 @@ export class ShopService {
     const sql = "DELETE FROM shops WHERE id = ?";
     try {
       const result = await query(sql, [id]);
-      return result.affectedRows > 0;
+      // return result.affectedRows > 0;
+      return true;
     } catch (error) {
       console.error("Error deleting shop:", error);
       throw new Error("Could not delete shop.");

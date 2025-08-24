@@ -64,7 +64,7 @@ class AuthService {
             return updatedUsers[0];
         });
     }
-    loginUser(email, password) {
+    loginUser2(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
             const sql = "SELECT * FROM users WHERE email = ?";
             const users = yield (0, db_1.query)(sql, [email]);
@@ -77,6 +77,34 @@ class AuthService {
             if (!user.is_verified)
                 throw new Error("Email not verified");
             return user;
+        });
+    }
+    loginUser(email, password) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = `
+    SELECT u.*, ss.shop_id
+    FROM users u
+    LEFT JOIN shop_shopkeepers ss ON u.id = ss.user_id
+    WHERE u.email = ?
+  `;
+            const users = yield (0, db_1.query)(sql, [email]);
+            const user = users[0];
+            if (!user)
+                throw new Error("Invalid credentials");
+            const isMatch = yield bcrypt_1.default.compare(password, user.password);
+            if (!isMatch)
+                throw new Error("Invalid credentials");
+            if (!user.is_verified)
+                throw new Error("Email not verified");
+            // if (!user.shop_id) throw new Error("User not assigned to a shop");
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                is_verified: user.is_verified,
+                shopId: user.shop_id,
+            };
         });
     }
 }

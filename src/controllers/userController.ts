@@ -21,6 +21,46 @@ class UserController {
     }
   }
 
+  public async getUsersByRole(req: Request, res: Response) {
+    try {
+      const { role } = req.query;
+      if (!role) {
+        return res.status(400).json({
+          message:
+            "Invalid role parameter. Only shopkeeper or storekeeper is supported.'",
+        });
+      }
+
+      if (role === "shopkeeper") {
+        const shopkeepers = await this.userService.getShopkeepers();
+        return res.status(200).json(shopkeepers);
+      } else if (role === "storekeeper") {
+        const storekeepers = await this.userService.getStorekeepers();
+        return res.status(200).json(storekeepers);
+      } else {
+        return res.status(400).json({
+          message:
+            "Invalid role parameter. Only shopkeeper or storekeeper is supported.'",
+        });
+      }
+    } catch (error) {}
+  }
+
+  public async getShopkeepers(req: Request, res: Response): Promise<Response> {
+    try {
+      const { role } = req.query;
+      if (role && role !== "shopkeeper") {
+        return res.status(400).json({
+          message: "Invalid role parameter. Only shopkeeper is supported.'",
+        });
+      }
+      const shopkeepers = await this.userService.getShopkeepers();
+      return res.status(200).json(shopkeepers);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error", error });
+    }
+  }
+
   public async updateUserRole(req: Request, res: Response): Promise<Response> {
     try {
       const userId = req.params.id;

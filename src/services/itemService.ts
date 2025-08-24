@@ -22,7 +22,7 @@ export class ItemService {
    * @param id - The ID of the item to retrieve.
    * @returns {Promise<Item | null>} A promise that resolves to the item object if found, otherwise null.
    */
-  async getItemById(id: number): Promise<Item | null> {
+  async getItemById(id: number) {
     const sql = `SELECT * FROM items WHERE id = ?`;
     const result = await query(sql, [id]);
     return result;
@@ -32,7 +32,7 @@ export class ItemService {
    * @param item - The item object containing the details to create.
    * @returns {Promise<Item>} A promise that resolves to the newly created item object.
    */
-  async createItem(item: Item): Promise<Item> {
+  async createItem(item: Item) {
     const params = [
       item.name,
       item.description,
@@ -40,10 +40,12 @@ export class ItemService {
       item.price,
       item.brand_id,
       item.category_id,
-      item.stock_quantity,
+      // item.stock_quantity,
       item.minimum_stock,
     ];
-    const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    // const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
     const result = await query(sql, params);
     return result;
   }
@@ -54,7 +56,7 @@ export class ItemService {
    * @param itemData - The item object containing the details to update.
    * @returns {Promise<Item | null>} A promise that resolves to the item object if found and updated, otherwise null.
    */
-  async updateItem(id: number, itemData: Partial<Item>): Promise<Item | null> {
+  async updateItem(id: number, itemData: Partial<Item>) {
     const setValues = Object.entries(itemData)
       .filter(([_, value]) => value !== undefined)
       .map(([key, value]) => `${key} = ?`)
