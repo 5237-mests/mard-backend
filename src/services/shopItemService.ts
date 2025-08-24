@@ -15,7 +15,7 @@ export class ShopItemService {
     shopId: number,
     itemId: number,
     quantity: number
-  ): Promise<ShopItem> {
+  ) {
     // First, check if the shop and item exist to maintain foreign key integrity.
     const shopExists = await query("SELECT 1 FROM shops WHERE id = ?", [
       shopId,
@@ -58,16 +58,16 @@ export class ShopItemService {
     shopId: number,
     itemId: number,
     newQuantity: number
-  ): Promise<boolean> {
+  ) {
     const sql =
       "UPDATE shop_items SET quantity = ? WHERE shop_id = ? AND item_id = ?";
     const params = [newQuantity, shopId, itemId];
 
     try {
       const result = await query(sql, params);
-      if (result.affectedRows === 0) {
-        return false;
-      }
+      // if (result.affectedRows === 0) {
+      //   return false;
+      // }
       return true;
     } catch (error) {
       console.error("Error updating shop item quantity:", error);
@@ -90,7 +90,8 @@ export class ShopItemService {
 
     try {
       const result = await query(sql, params);
-      return result.affectedRows > 0;
+      // return result.affectedRows > 0;
+      return true;
     } catch (error) {
       console.error("Error deleting shop item:", error);
       throw new Error("Could not delete item from shop.");

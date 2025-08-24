@@ -70,9 +70,9 @@ class AuthController {
       const user = await authService.loginUser(email, password);
       // Generate JWT
       const token = require("jsonwebtoken").sign(
-        { id: user.id, email: user.email, role: user.role },
+        { user },
         process.env.JWT_SECRET || "default_secret",
-        { expiresIn: "1h" } // Set the token expiration time to 1 hour
+        { expiresIn: "3h" }
       );
       res.status(200).json({
         token,

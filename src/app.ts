@@ -15,6 +15,7 @@ import categoryRoutes from "./routes/categoryRoutes";
 import itemRoutes from "./routes/itemRoutes";
 import shopItemRoutes from "./routes/shopItemRoute";
 import shopShopKeeperRoutes from "./routes/ShopShopkeeperRoute";
+import salesRoutes from "./routes/salesRoute";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import { logStream } from "./config/logger";
@@ -65,6 +66,7 @@ app.use("/api/store", storeRoutes);
 app.use("/api/transfer", transferRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api", salesRoutes);
 
 // Error logging middleware (must be after all routes)
 app.use(errorLogger);

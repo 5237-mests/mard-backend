@@ -104,6 +104,30 @@ class UserService {
             return users[0];
         });
     }
+    // get getShopkeepers
+    getShopkeepers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "SELECT * FROM users WHERE role = 'SHOPKEEPER'";
+            const users = yield (0, db_1.query)(sql);
+            return users;
+        });
+    }
+    // get getStorekeepers
+    getStorekeepers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "SELECT * FROM users WHERE role = 'STOREKEEPER'";
+            const users = yield (0, db_1.query)(sql);
+            return users;
+        });
+    }
+    // get users by role
+    getUsersByRole(role) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = "SELECT * FROM users WHERE role = ?";
+            const users = yield (0, db_1.query)(sql, [role]);
+            return users;
+        });
+    }
     // delete user
     deleteUser(userId) {
         return __awaiter(this, void 0, void 0, function* () {

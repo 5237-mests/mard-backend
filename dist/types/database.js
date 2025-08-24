@@ -17,3 +17,13 @@ var TransferRequestStatus;
     TransferRequestStatus["APPROVED"] = "APPROVED";
     TransferRequestStatus["REJECTED"] = "REJECTED";
 })(TransferRequestStatus || (exports.TransferRequestStatus = TransferRequestStatus = {}));
+// export interface Sale {
+//   id: number;
+//   shop_id: string;
+//   sold_by_id: number;
+//   total_amount: number;
+//   customer_name: string | null;
+//   customer_contact: string | null;
+//   created_at: string;
+//   items: SaleItem[];
+// }

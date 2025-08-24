@@ -4,6 +4,16 @@ import { UserService } from "../models/user";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
+interface User2 {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: Role;
+  is_verified: boolean;
+  shopId: string; // Added to include shop_id
+}
+
 export class AuthService {
   async registerUser(data: {
     name: string;
@@ -61,7 +71,7 @@ export class AuthService {
     return updatedUsers[0] as User;
   }
 
-  async loginUser(email: string, password: string) {
+  async loginUser2(email: string, password: string) {
     const sql = "SELECT * FROM users WHERE email = ?";
     const users = await query(sql, [email]);
     const user = users[0];
@@ -73,5 +83,32 @@ export class AuthService {
     if (!user.is_verified) throw new Error("Email not verified");
 
     return user as User;
+  }
+
+  async loginUser(email: string, password: string): Promise<User2> {
+    const sql = `
+    SELECT u.*, ss.shop_id
+    FROM users u
+    LEFT JOIN shop_shopkeepers ss ON u.id = ss.user_id
+    WHERE u.email = ?
+  `;
+    const users = await query(sql, [email]);
+    const user = users[0];
+
+    if (!user) throw new Error("Invalid credentials");
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) throw new Error("Invalid credentials");
+    if (!user.is_verified) throw new Error("Email not verified");
+    // if (!user.shop_id) throw new Error("User not assigned to a shop");
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      is_verified: user.is_verified,
+      shopId: user.shop_id,
+    } as User2;
   }
 }

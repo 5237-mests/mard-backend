@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authorizeUser = exports.authorizeRole = exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-require("../types"); // Import type extensions
+require("../types");
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(" ")[1];
@@ -24,12 +24,21 @@ exports.authenticateToken = authenticateToken;
 const authorizeRole = (roles) => {
     return (req, res, next) => {
         var _a;
-        const userRole = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role;
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ message: "Access token required" });
+        }
+        // decode token to get user role
+        const decodedtoken = jsonwebtoken_1.default.decode(token);
+        const userRole = (_a = decodedtoken === null || decodedtoken === void 0 ? void 0 : decodedtoken.user) === null || _a === void 0 ? void 0 : _a.role;
         if (!userRole) {
             return res.status(401).json({ message: "User not authenticated" });
         }
         if (!roles.includes(userRole)) {
-            return res.status(403).json({ message: "Access denied. Insufficient permissions." });
+            return res
+                .status(403)
+                .json({ message: "Access denied. Insufficient permissions." });
         }
         next();
     };

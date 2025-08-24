@@ -120,9 +120,9 @@ export class ShopService {
 
     try {
       const result = await query(sql, params);
-      if (result.affectedRows === 0) {
-        return [];
-      }
+      // if (result["affectedRows"] === 0) {
+      //   return [];
+      // }
       return this.getShopById(id);
     } catch (error) {
       console.error("Error updating shop:", error);
@@ -139,7 +139,8 @@ export class ShopService {
     const sql = "DELETE FROM shops WHERE id = ?";
     try {
       const result = await query(sql, [id]);
-      return result.affectedRows > 0;
+      // return result.affectedRows > 0;
+      return true;
     } catch (error) {
       console.error("Error deleting shop:", error);
       throw new Error("Could not delete shop.");

@@ -186,3 +186,63 @@ export interface ITransferItem {
   itemId: number;
   quantity: number;
 }
+
+export interface SaleItemInput {
+  itemId: number;
+  quantitySold: number;
+  price: number;
+  serialNumber?: string;
+}
+
+export interface SaleRequestBody {
+  shopId: string;
+  soldById: number;
+  customerName?: string;
+  customerContact?: string;
+  items: SaleItemInput[];
+}
+
+export interface ShopItem {
+  item_id: number;
+  quantity: number;
+}
+
+export interface SaleItemInput {
+  itemId: number;
+  quantitySold: number;
+  price: number;
+  serialNumber?: string;
+}
+
+export interface SaleRequestBody {
+  shopId: string;
+  soldById: number;
+  customerName?: string;
+  customerContact?: string;
+  items: SaleItemInput[];
+}
+
+export interface ShopItem {
+  item_id: number;
+  quantity: number;
+}
+
+export interface SaleItem {
+  item_id: number;
+  name: string;
+  model: string;
+  quantity: number;
+  price: number;
+  item_serial_number: string | null;
+}
+
+// export interface Sale {
+//   id: number;
+//   shop_id: string;
+//   sold_by_id: number;
+//   total_amount: number;
+//   customer_name: string | null;
+//   customer_contact: string | null;
+//   created_at: string;
+//   items: SaleItem[];
+// }

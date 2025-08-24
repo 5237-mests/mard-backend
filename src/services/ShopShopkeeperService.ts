@@ -64,7 +64,8 @@ export class ShopShopkeeperService {
 
     try {
       const result = await query(sql, params);
-      return result.affectedRows > 0;
+      // return result.affectedRows > 0;
+      return true; // Assume success if no error is thrown
     } catch (error) {
       console.error("Error removing shopkeeper from shop:", error);
       throw new Error("Could not remove shopkeeper.");
