@@ -69,9 +69,9 @@ class SalesService {
       SELECT 
         s.id, 
         s.shop_id, 
-        sh.name AS shop_name,
+        sh.name AS shop,
         s.sold_by_id, 
-        u.email AS seller_email,
+        u.name AS seller,
         s.total_amount, 
         s.customer_name, 
         s.customer_contact, 
