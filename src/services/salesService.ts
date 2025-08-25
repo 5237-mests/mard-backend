@@ -94,9 +94,9 @@ export class SalesService {
       SELECT 
         s.id, 
         s.shop_id, 
-        sh.name AS shop_name,
+        sh.name AS shop,
         s.sold_by_id, 
-        u.email AS seller_email,
+        u.name AS seller,
         s.total_amount, 
         s.customer_name, 
         s.customer_contact, 
@@ -134,46 +134,4 @@ export class SalesService {
       items: sale.items ? JSON.parse(`[${sale.items}]`) : [],
     }));
   }
-
-  // static async getSales(shopId: string): Promise<Sale[]> {
-  //   const salesRows = await query<Sale[]>(
-  //     `
-  //     SELECT
-  //       s.id,
-  //       s.shop_id,
-  //       sh.name AS shop,
-  //       s.sold_by_id,
-  //       u.name AS seller,
-  //       s.total_amount,
-  //       s.customer_name,
-  //       s.customer_contact,
-  //       s.created_at,
-  //       GROUP_CONCAT(
-  //         JSON_OBJECT(
-  //           'item_id', si.item_id,
-  //           'name', i.name,
-  //           'model', i.model,
-  //           'quantity', si.quantity,
-  //           'price', si.price,
-  //           'item_serial_number', si.item_serial_number
-  //         )
-  //       ) AS items
-  //     FROM sales s
-  //     LEFT JOIN sale_items si ON s.id = si.sale_id
-  //     LEFT JOIN items i ON si.item_id = i.id
-  //     LEFT JOIN shops sh ON s.shop_id = sh.id
-  //     LEFT JOIN users u ON s.sold_by_id = u.id
-  //     WHERE s.shop_id = ?
-  //     GROUP BY s.id
-  //     ORDER BY s.created_at DESC
-  //     `,
-  //     [shopId]
-  //   );
-
-  //   // Parse items JSON for each sale
-  //   return salesRows.map((sale) => ({
-  //     ...sale,
-  //     items: sale.items ? JSON.parse(`[${sale.items}]`) : [],
-  //   }));
-  // }
 }
