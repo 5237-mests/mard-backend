@@ -72,7 +72,7 @@ class AuthController {
       const token = require("jsonwebtoken").sign(
         { user },
         process.env.JWT_SECRET || "default_secret",
-        { expiresIn: "3h" }
+        { expiresIn: "7d" }
       );
       res.status(200).json({
         token,

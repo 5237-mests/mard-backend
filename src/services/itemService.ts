@@ -43,6 +43,13 @@ export class ItemService {
       // item.stock_quantity,
       item.minimum_stock,
     ];
+
+    // Check product existed by name
+    const checkSql = `SELECT * FROM items WHERE name = ?`;
+    const existingItems = await query(checkSql, [item.name]);
+    if (existingItems.length > 0) {
+      return null;
+    }
     // const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
