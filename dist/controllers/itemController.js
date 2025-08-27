@@ -71,6 +71,12 @@ class ItemController {
             try {
                 const itemService = new itemService_1.ItemService();
                 const createdItem = yield itemService.createItem(newItem);
+                // If item with the same name exists
+                if (!createdItem) {
+                    return res
+                        .status(400)
+                        .json({ error: "Item with the same name already exists" });
+                }
                 res.status(201).json(createdItem);
             }
             catch (error) {

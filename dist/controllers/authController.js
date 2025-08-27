@@ -70,7 +70,7 @@ class AuthController {
             try {
                 const user = yield authService.loginUser(email, password);
                 // Generate JWT
-                const token = require("jsonwebtoken").sign({ user }, process.env.JWT_SECRET || "default_secret", { expiresIn: "3h" });
+                const token = require("jsonwebtoken").sign({ user }, process.env.JWT_SECRET || "default_secret", { expiresIn: "7d" });
                 res.status(200).json({
                     token,
                     user: {

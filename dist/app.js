@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const cors_1 = __importDefault(require("cors"));
-const morgan_1 = __importDefault(require("morgan"));
+// import cors from "cors";
+// import morgan from "morgan";
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
@@ -23,8 +23,12 @@ const ShopShopkeeperRoute_1 = __importDefault(require("./routes/ShopShopkeeperRo
 const salesRoute_1 = __importDefault(require("./routes/salesRoute"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
-const logger_2 = require("./config/logger");
-const apiLogger_1 = require("./middleware/apiLogger");
+// import { logStream } from "./config/logger";
+// import {
+// apiLogger,
+// errorLogger,
+// performanceLogger,
+// } from "./middleware/apiLogger";
 const path_1 = __importDefault(require("path"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -33,15 +37,15 @@ const PORT = process.env.PORT || 3001;
 app.use(express_1.default.json());
 (0, db_1.default)();
 // CORS configuration
-const corsOptions = {
-    origin: "http://localhost:8080",
-    credentials: true,
-};
-app.use((0, cors_1.default)(corsOptions));
+// const corsOptions = {
+//   origin: "http://localhost:8080",
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
 // Logging middleware
-app.use((0, morgan_1.default)("combined", { stream: logger_2.logStream }));
-app.use(apiLogger_1.apiLogger);
-app.use(apiLogger_1.performanceLogger);
+// app.use(morgan("combined", { stream: logStream }));
+// app.use(apiLogger);
+// app.use(performanceLogger);
 // Serve static files from the "public" directory
 app.use(express_1.default.static(path_1.default.join(__dirname, "../client")));
 // API Routes
@@ -60,7 +64,7 @@ app.use("/api/notifications", notificationRoutes_1.default);
 app.use("/api/inventory", inventoryRoutes_1.default);
 app.use("/api", salesRoute_1.default);
 // Error logging middleware (must be after all routes)
-app.use(apiLogger_1.errorLogger);
+// app.use(errorLogger);
 // Serve the React app for all other routes
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(__dirname, "../client/index.html"));
