@@ -11,4 +11,6 @@ const router = express_1.default.Router();
 router.post("/sales", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), salesController_1.SalesController.createSale);
 // GET /api/sales?shopId= - Retrieve sales for a specific shop
 router.get("/sales", authMiddleware_1.authenticateToken, salesController_1.SalesController.getSales);
+// GET all sales for admin
+router.get("/sales/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), salesController_1.SalesController.getAllSales);
 exports.default = router;

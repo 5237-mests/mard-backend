@@ -66,5 +66,18 @@ class SalesController {
             }
         });
     }
+    // get all sales for admin
+    static getAllSales(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const sales = yield salesService_1.SalesService.getAllSales();
+                res.status(200).json(sales);
+            }
+            catch (error) {
+                console.error("Error fetching sales:", error);
+                res.status(500).json({ error: `Failed to fetch sales: ${error}` });
+            }
+        });
+    }
 }
 exports.SalesController = SalesController;

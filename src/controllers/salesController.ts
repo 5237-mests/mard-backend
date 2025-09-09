@@ -71,4 +71,15 @@ export class SalesController {
         .json({ error: `Failed to fetch sales history: ${error}` });
     }
   }
+
+  // get all sales for admin
+  static async getAllSales(req: Request, res: Response) {
+    try {
+      const sales = await SalesService.getAllSales();
+      res.status(200).json(sales);
+    } catch (error) {
+      console.error("Error fetching sales:", error);
+      res.status(500).json({ error: `Failed to fetch sales: ${error}` });
+    }
+  }
 }

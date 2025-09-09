@@ -15,4 +15,12 @@ router.post(
 // GET /api/sales?shopId= - Retrieve sales for a specific shop
 router.get("/sales", authenticateToken, SalesController.getSales);
 
+// GET all sales for admin
+router.get(
+  "/sales/all",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  SalesController.getAllSales
+);
+
 export default router;

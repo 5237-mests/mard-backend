@@ -31,3 +31,32 @@ export interface Task {
   assignedTo: string;
   status: "pending" | "in-progress" | "completed";
 }
+
+export interface Cart {
+  id: number;
+  user_id: number;
+  created_at?: Date;
+}
+
+export interface CartItem {
+  id: number;
+  cart_id: number;
+  product_id: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: number;
+  user_id: number;
+  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
+  delivery_address: string;
+  created_at?: Date;
+}
+
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  product_id: number;
+  quantity: number;
+  price_at_order: number;
+}

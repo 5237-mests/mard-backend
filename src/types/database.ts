@@ -246,3 +246,66 @@ export interface SaleItem {
 //   created_at: string;
 //   items: SaleItem[];
 // }
+
+export interface OrderItem {
+  item_id: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: number;
+  status: "pending" | "approved" | "shipped" | "delivered" | "rejected";
+  delivery_details?: string;
+  created_at: string;
+  updated_at: string;
+  items: { item_id: number; name: string; quantity: number; price: number }[];
+}
+
+export interface CreateOrderInput {
+  items: OrderItem[];
+  delivery_details?: string;
+}
+
+export interface NewProductRequest {
+  name: string;
+  category?: string;
+  brand?: string;
+  description?: string;
+  supplier?: string;
+}
+
+export interface RepurchaseRequest {
+  item_id: number;
+  recommended_quantity: number;
+  reason?: string;
+}
+
+export interface Request {
+  id: number;
+  type: "new_product" | "repurchase";
+  status: "pending" | "reviewed" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+  details:
+    | NewProductRequest
+    | {
+        item_id: number;
+        name: string;
+        recommended_quantity: number;
+        reason?: string;
+      };
+}
+
+export interface RequestQuery {
+  type?: "new_product" | "repurchase";
+  status?: "pending" | "reviewed" | "approved" | "rejected";
+}
+
+export interface ItemQuery {
+  search?: string;
+  category?: string;
+  min_price?: number;
+  max_price?: number;
+  available_only?: boolean;
+  low_stock?: number;
+}
