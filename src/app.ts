@@ -16,8 +16,14 @@ import itemRoutes from "./routes/itemRoutes";
 import shopItemRoutes from "./routes/shopItemRoute";
 import shopShopKeeperRoutes from "./routes/ShopShopkeeperRoute";
 import salesRoutes from "./routes/salesRoute";
+// import adminRoutes from "./routes/adminRoutes";
+import retailerRoutes from "./routes/retailerRoutes";
+import factoryAgentRoutes from "./routes/factoryAgentRoutes";
 import connectDB from "./config/db";
 import logger from "./config/logger";
+import cartRoutes from "./routes/cartRoute";
+import orderRoutes from "./routes/orderRoute";
+import salesroutes2 from "./routes/salesRoutes2";
 // import { logStream } from "./config/logger";
 // import {
 // apiLogger,
@@ -26,6 +32,7 @@ import logger from "./config/logger";
 // } from "./middleware/apiLogger";
 
 import path from "path";
+import errorHandler from "./lib/errorHandler";
 
 dotenv.config();
 
@@ -67,9 +74,18 @@ app.use("/api/transfer", transferRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api", salesRoutes);
+app.use("/api", retailerRoutes);
+app.use("/api", factoryAgentRoutes);
+// app.use("/api/order", adminRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/sales2", salesroutes2);
 
 // Error logging middleware (must be after all routes)
 // app.use(errorLogger);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 // Serve the React app for all other routes
 app.get("*", (req, res) => {

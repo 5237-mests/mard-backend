@@ -103,5 +103,42 @@ class SalesService {
             return salesRows.map((sale) => (Object.assign(Object.assign({}, sale), { items: sale.items ? JSON.parse(`[${sale.items}]`) : [] })));
         });
     }
+    // get all sales
+    static getAllSales() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // const salesRows = await query<Sale[]>(
+            //   "SELECT * FROM sales ORDER BY soldAt DESC"
+            // );
+            const sql = `
+      SELECT 
+        s.id, 
+        s.shop_id, 
+        sh.name AS shop,
+        s.sold_by_id, 
+        u.name AS seller,
+        s.total_amount, 
+        s.customer_name, 
+        s.customer_contact, 
+        s.created_at,
+        GROUP_CONCAT(
+          JSON_OBJECT(
+            'item_id', si.item_id,
+            'name', i.name,
+            'model', i.model,
+            'quantity', si.quantity,
+            'price', si.price,
+            'item_serial_number', si.item_serial_number
+          )
+        ) AS items
+      FROM sales s
+      LEFT JOIN sale_items si ON s.id = si.sale_id
+      LEFT JOIN items i ON si.item_id = i.id
+      LEFT JOIN shops sh ON s.shop_id = sh.id
+      LEFT JOIN users u ON s.sold_by_id = u.id
+      GROUP BY s.id ORDER BY s.created_at DESC`;
+            const salesRows = yield (0, db_1.query)(sql);
+            return salesRows.map((sale) => (Object.assign(Object.assign({}, sale), { items: sale.items ? JSON.parse(`[${sale.items}]`) : [] })));
+        });
+    }
 }
 exports.SalesService = SalesService;

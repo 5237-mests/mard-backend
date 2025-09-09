@@ -21,8 +21,14 @@ const itemRoutes_1 = __importDefault(require("./routes/itemRoutes"));
 const shopItemRoute_1 = __importDefault(require("./routes/shopItemRoute"));
 const ShopShopkeeperRoute_1 = __importDefault(require("./routes/ShopShopkeeperRoute"));
 const salesRoute_1 = __importDefault(require("./routes/salesRoute"));
+// import adminRoutes from "./routes/adminRoutes";
+const retailerRoutes_1 = __importDefault(require("./routes/retailerRoutes"));
+const factoryAgentRoutes_1 = __importDefault(require("./routes/factoryAgentRoutes"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
+const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
+const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
+const salesRoutes2_1 = __importDefault(require("./routes/salesRoutes2"));
 // import { logStream } from "./config/logger";
 // import {
 // apiLogger,
@@ -30,6 +36,7 @@ const logger_1 = __importDefault(require("./config/logger"));
 // performanceLogger,
 // } from "./middleware/apiLogger";
 const path_1 = __importDefault(require("path"));
+const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
@@ -63,8 +70,16 @@ app.use("/api/transfer", transferRoutes_1.default);
 app.use("/api/notifications", notificationRoutes_1.default);
 app.use("/api/inventory", inventoryRoutes_1.default);
 app.use("/api", salesRoute_1.default);
+app.use("/api", retailerRoutes_1.default);
+app.use("/api", factoryAgentRoutes_1.default);
+// app.use("/api/order", adminRoutes);
+app.use("/api/cart", cartRoute_1.default);
+app.use("/api/orders", orderRoute_1.default);
+app.use("/api/sales2", salesRoutes2_1.default);
 // Error logging middleware (must be after all routes)
 // app.use(errorLogger);
+// Global error handler (must be last)
+app.use(errorHandler_1.default);
 // Serve the React app for all other routes
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(__dirname, "../client/index.html"));
