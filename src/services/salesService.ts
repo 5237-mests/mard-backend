@@ -172,7 +172,7 @@ export class SalesService {
     });
   }
 
-  static async getSales(
+  static async getSales2(
     shopId: string,
     startDate?: string,
     endDate?: string
@@ -219,6 +219,58 @@ export class SalesService {
     return salesRows.map((sale) => ({
       ...sale,
       items: sale.items ? JSON.parse(`[${sale.items}]`) : [],
+    }));
+  }
+  static async getSales(
+    shopId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<Sale[]> {
+    let queryStr = `
+    SELECT 
+      s.id, 
+      s.shop_id, 
+      sh.name AS shop,
+      s.sold_by_id, 
+      u.name AS seller,
+      s.total_amount, 
+      s.customer_name, 
+      s.customer_contact, 
+      s.created_at,
+      COUNT(DISTINCT si.item_id) AS total_distinct_items,
+      GROUP_CONCAT(
+        JSON_OBJECT(
+          'item_id', si.item_id,
+          'name', i.name,
+          'model', i.model,
+          'quantity', si.quantity,
+          'price', si.price,
+          'item_serial_number', si.item_serial_number
+        )
+      ) AS items
+    FROM sales s
+    LEFT JOIN sale_items si ON s.id = si.sale_id
+    LEFT JOIN items i ON si.item_id = i.id
+    LEFT JOIN shops sh ON s.shop_id = sh.id
+    LEFT JOIN users u ON s.sold_by_id = u.id
+    WHERE s.shop_id = ?
+  `;
+
+    const params: (string | number)[] = [shopId];
+
+    if (startDate && endDate) {
+      queryStr += ` AND s.created_at BETWEEN ? AND ?`;
+      params.push(startDate, endDate);
+    }
+
+    queryStr += ` GROUP BY s.id ORDER BY s.created_at DESC`;
+
+    const salesRows = await query<Sale[]>(queryStr, params);
+
+    return salesRows.map((sale) => ({
+      ...sale,
+      items: sale.items ? JSON.parse(`[${sale.items}]`) : [],
+      total_distinct_items: Number(sale.total_distinct_items) || 0,
     }));
   }
 

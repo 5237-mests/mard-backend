@@ -118,7 +118,7 @@ class SalesService {
             }));
         });
     }
-    static getSales(shopId, startDate, endDate) {
+    static getSales2(shopId, startDate, endDate) {
         return __awaiter(this, void 0, void 0, function* () {
             let queryStr = `
       SELECT 
@@ -156,6 +156,47 @@ class SalesService {
             queryStr += ` GROUP BY s.id ORDER BY s.created_at DESC`;
             const salesRows = yield (0, db_1.query)(queryStr, params);
             return salesRows.map((sale) => (Object.assign(Object.assign({}, sale), { items: sale.items ? JSON.parse(`[${sale.items}]`) : [] })));
+        });
+    }
+    static getSales(shopId, startDate, endDate) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let queryStr = `
+    SELECT 
+      s.id, 
+      s.shop_id, 
+      sh.name AS shop,
+      s.sold_by_id, 
+      u.name AS seller,
+      s.total_amount, 
+      s.customer_name, 
+      s.customer_contact, 
+      s.created_at,
+      COUNT(DISTINCT si.item_id) AS total_distinct_items,
+      GROUP_CONCAT(
+        JSON_OBJECT(
+          'item_id', si.item_id,
+          'name', i.name,
+          'model', i.model,
+          'quantity', si.quantity,
+          'price', si.price,
+          'item_serial_number', si.item_serial_number
+        )
+      ) AS items
+    FROM sales s
+    LEFT JOIN sale_items si ON s.id = si.sale_id
+    LEFT JOIN items i ON si.item_id = i.id
+    LEFT JOIN shops sh ON s.shop_id = sh.id
+    LEFT JOIN users u ON s.sold_by_id = u.id
+    WHERE s.shop_id = ?
+  `;
+            const params = [shopId];
+            if (startDate && endDate) {
+                queryStr += ` AND s.created_at BETWEEN ? AND ?`;
+                params.push(startDate, endDate);
+            }
+            queryStr += ` GROUP BY s.id ORDER BY s.created_at DESC`;
+            const salesRows = yield (0, db_1.query)(queryStr, params);
+            return salesRows.map((sale) => (Object.assign(Object.assign({}, sale), { items: sale.items ? JSON.parse(`[${sale.items}]`) : [], total_distinct_items: Number(sale.total_distinct_items) || 0 })));
         });
     }
     // get all sales

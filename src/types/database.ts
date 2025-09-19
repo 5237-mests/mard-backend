@@ -100,6 +100,7 @@ export interface Sale {
   items: any; // JSON field
   soldById: number;
   soldAt: Date;
+  total_distinct_items: number;
   created_at?: Date;
   updated_at?: Date;
 }
