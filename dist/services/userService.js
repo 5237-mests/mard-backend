@@ -107,7 +107,8 @@ class UserService {
     // get getShopkeepers
     getShopkeepers() {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = "SELECT * FROM users WHERE role = 'SHOPKEEPER'";
+            // get only users with role SHOPKEEPER and ADMIN
+            const sql = "SELECT * FROM users WHERE role = 'SHOPKEEPER' OR role = 'ADMIN'";
             const users = yield (0, db_1.query)(sql);
             return users;
         });

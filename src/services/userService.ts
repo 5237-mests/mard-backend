@@ -104,7 +104,9 @@ export class UserService {
 
   // get getShopkeepers
   async getShopkeepers() {
-    const sql = "SELECT * FROM users WHERE role = 'SHOPKEEPER'";
+    // get only users with role SHOPKEEPER and ADMIN
+    const sql =
+      "SELECT * FROM users WHERE role = 'SHOPKEEPER' OR role = 'ADMIN'";
     const users = await query(sql);
     return users;
   }
