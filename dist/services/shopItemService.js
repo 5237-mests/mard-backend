@@ -119,6 +119,7 @@ class ShopItemService {
             JOIN categories c ON i.category_id = c.id
             JOIN brands b ON i.brand_id = b.id
             WHERE si.shop_id = ?
+            ORDER BY i.name ASC
         `;
             try {
                 const rows = yield (0, db_1.query)(sql, [shopId]);
@@ -142,6 +143,7 @@ class ShopItemService {
                 i.price AS item_price
             FROM shop_items si
             JOIN items i ON si.item_id = i.id
+            ORDER BY i.name ASC
         `;
             try {
                 const rows = yield (0, db_1.query)(sql);

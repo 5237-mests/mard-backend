@@ -15,7 +15,7 @@ class BrandService {
     // Fetch all brands from the database
     getAllBrands() {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = "SELECT * FROM brands";
+            const sql = "SELECT * FROM brands ORDER BY name ASC";
             const brands = yield (0, db_1.query)(sql);
             return brands;
         });

@@ -3,7 +3,8 @@ import { query } from "../config/db";
 
 export class CategoryService {
   async getAllCategories() {
-    const sql = "SELECT * FROM categories";
+    // get all categories and sort ascendingly
+    const sql = "SELECT * FROM categories ORDER BY name ASC";
     const result = await query(sql);
     return result;
   }

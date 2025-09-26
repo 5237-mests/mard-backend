@@ -18,12 +18,12 @@ class ItemService {
      */
     getAllItems() {
         return __awaiter(this, void 0, void 0, function* () {
-            // const sql = `SELECT * FROM items`;
             // join brands and categories to get more details
             const sql = `SELECT items.*, brands.name AS brand_name, categories.name AS category_name
                  FROM items
                  JOIN brands ON items.brand_id = brands.id
-                 JOIN categories ON items.category_id = categories.id`;
+                 JOIN categories ON items.category_id = categories.id
+                 ORDER BY items.name ASC`;
             const result = yield (0, db_1.query)(sql);
             return result;
         });
