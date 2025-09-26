@@ -7,12 +7,12 @@ export class ItemService {
    * @returns {Promise<Item[]>} A promise that resolves to an array of all items.
    */
   async getAllItems(): Promise<Item[]> {
-    // const sql = `SELECT * FROM items`;
     // join brands and categories to get more details
     const sql = `SELECT items.*, brands.name AS brand_name, categories.name AS category_name
                  FROM items
                  JOIN brands ON items.brand_id = brands.id
-                 JOIN categories ON items.category_id = categories.id`;
+                 JOIN categories ON items.category_id = categories.id
+                 ORDER BY items.name ASC`;
     const result = await query(sql);
     return result;
   }

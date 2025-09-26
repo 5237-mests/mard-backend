@@ -14,7 +14,8 @@ const db_1 = require("../config/db");
 class CategoryService {
     getAllCategories() {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = "SELECT * FROM categories";
+            // get all categories and sort ascendingly
+            const sql = "SELECT * FROM categories ORDER BY name ASC";
             const result = yield (0, db_1.query)(sql);
             return result;
         });

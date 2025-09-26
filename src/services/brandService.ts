@@ -4,7 +4,7 @@ import { Brand } from "../types/database";
 export class BrandService {
   // Fetch all brands from the database
   async getAllBrands() {
-    const sql = "SELECT * FROM brands";
+    const sql = "SELECT * FROM brands ORDER BY name ASC";
     const brands = await query(sql);
     return brands;
   }
