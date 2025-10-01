@@ -59,6 +59,15 @@ connectDB();
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "../client")));
 
+// app.use("/uploads", express.static("public/uploads"));
+// Serve uploads via /uploads URL.
+app.use(
+  "/uploads",
+  express.static(
+    path.join(process.env.HOME || "/home/mardtryj", "uploads/products")
+  )
+);
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
