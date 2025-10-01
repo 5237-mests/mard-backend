@@ -38,7 +38,7 @@ export interface Brand {
   updated_at?: Date;
 }
 
-export interface Item {
+export interface Item1 {
   id: number;
   name: string;
   model: string;
@@ -48,6 +48,20 @@ export interface Item {
   category_id: number | null;
   // stock_quantity: number;
   minimum_stock: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+// Update your Item interface (e.g., in models/item.ts or wherever)
+export interface Item {
+  id?: number;
+  name: string;
+  description?: string;
+  model: string;
+  price: number;
+  brand_id: number;
+  category_id: number | null;
+  minimum_stock: number;
+  image?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
