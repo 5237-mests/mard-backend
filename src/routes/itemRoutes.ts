@@ -59,10 +59,17 @@ router.get(
   itemController.getItemById.bind(itemController)
 );
 
+// router.post(
+//   "/create",
+//   authenticateToken,
+//   authorizeRole(["ADMIN"]),
+//   itemController.createItem.bind(itemController)
+// );
 router.post(
   "/create",
   authenticateToken,
   authorizeRole(["ADMIN"]),
+  upload.single("image"), // Add this for image upload
   itemController.createItem.bind(itemController)
 );
 
