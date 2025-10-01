@@ -61,7 +61,7 @@ connectDB();
 app.use(express.static(path.join(__dirname, "../client")));
 
 // app.use("/uploads", express.static("public/uploads"));
-// Serve uploads via /uploads URL
+// Serve uploads via /uploads URL.
 app.use(
   "/uploads",
   express.static(
