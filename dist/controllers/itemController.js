@@ -8,12 +8,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const itemService_1 = require("../services/itemService");
-const promises_1 = __importDefault(require("fs/promises"));
 class ItemController {
     /**
      * Retrieves all items from the database.
@@ -66,7 +62,7 @@ class ItemController {
      * @param res - Express response object
      * @returns  A promise that resolves when the response has been sent
      */
-    createItem1(req, res) {
+    createItem(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const newItem = req.body;
             if (!newItem || !newItem.name || !newItem.category_id) {
@@ -85,37 +81,6 @@ class ItemController {
             }
             catch (error) {
                 console.error("Error creating item:", error);
-                res.status(500).json({ error: "Failed to create item" });
-            }
-        });
-    }
-    createItem(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const newItem = req.body;
-            const imageFile = req.file;
-            if (!newItem || !newItem.name || !newItem.category_id) {
-                if (imageFile)
-                    yield promises_1.default.unlink(imageFile.path).catch(() => { }); // Cleanup on error
-                return res.status(400).json({ error: "Invalid item data" });
-            }
-            try {
-                const imagePath = imageFile ? `/uploads/${imageFile.filename}` : null;
-                newItem.image = imagePath;
-                const itemService = new itemService_1.ItemService();
-                const createdItem = yield itemService.createItem(newItem);
-                if (!createdItem) {
-                    if (imageFile)
-                        yield promises_1.default.unlink(imageFile.path).catch(() => { });
-                    return res
-                        .status(400)
-                        .json({ error: "Item with the same name already exists" });
-                }
-                res.status(201).json(createdItem);
-            }
-            catch (error) {
-                console.error("Error creating item:", error);
-                if (imageFile)
-                    yield promises_1.default.unlink(imageFile.path).catch(() => { });
                 res.status(500).json({ error: "Failed to create item" });
             }
         });

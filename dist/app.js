@@ -29,13 +29,13 @@ const logger_1 = __importDefault(require("./config/logger"));
 const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
 const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
 const salesRoutes2_1 = __importDefault(require("./routes/salesRoutes2"));
-const path_1 = __importDefault(require("path"));
 // import { logStream } from "./config/logger";
 // import {
 // apiLogger,
 // errorLogger,
 // performanceLogger,
 // } from "./middleware/apiLogger";
+const path_1 = __importDefault(require("path"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -55,9 +55,6 @@ app.use(express_1.default.json());
 // app.use(performanceLogger);
 // Serve static files from the "public" directory
 app.use(express_1.default.static(path_1.default.join(__dirname, "../client")));
-// app.use("/uploads", express.static("public/uploads"));
-// Serve uploads via /uploads URL
-app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
 // API Routes
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/users", userRoutes_1.default);
