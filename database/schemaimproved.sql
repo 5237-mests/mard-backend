@@ -55,7 +55,6 @@ CREATE TABLE IF NOT EXISTS items (
 );
 
 -- Shops table
--- Renamed shopkeeperId to shopkeeper_id for consistency.
 CREATE TABLE IF NOT EXISTS shops (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
