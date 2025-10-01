@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import { ItemService } from "../services/itemService";
+import fs from "fs/promises";
+import path from "path";
+import { Item } from "../types/database";
 
 class ItemController {
   /**
@@ -50,7 +53,7 @@ class ItemController {
    * @param res - Express response object
    * @returns  A promise that resolves when the response has been sent
    */
-  async createItem(req: Request, res: Response) {
+  async createItem1(req: Request, res: Response) {
     const newItem = req.body;
     if (!newItem || !newItem.name || !newItem.category_id) {
       return res.status(400).json({ error: "Invalid item data" });
@@ -68,6 +71,35 @@ class ItemController {
       res.status(201).json(createdItem);
     } catch (error) {
       console.error("Error creating item:", error);
+      res.status(500).json({ error: "Failed to create item" });
+    }
+  }
+
+  async createItem(req: Request, res: Response) {
+    const newItem: Item = req.body;
+    const imageFile = req.file;
+
+    if (!newItem || !newItem.name || !newItem.category_id) {
+      if (imageFile) await fs.unlink(imageFile.path).catch(() => {}); // Cleanup on error
+      return res.status(400).json({ error: "Invalid item data" });
+    }
+
+    try {
+      const imagePath = imageFile ? `/uploads/${imageFile.filename}` : null;
+      newItem.image = imagePath;
+
+      const itemService = new ItemService();
+      const createdItem = await itemService.createItem(newItem);
+      if (!createdItem) {
+        if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
+        return res
+          .status(400)
+          .json({ error: "Item with the same name already exists" });
+      }
+      res.status(201).json(createdItem);
+    } catch (error) {
+      console.error("Error creating item:", error);
+      if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
       res.status(500).json({ error: "Failed to create item" });
     }
   }
