@@ -81,7 +81,7 @@ export class ItemService {
     ];
 
     const result = await query(sql, params);
-    // Return the inserted item (you might want to fetch it fully).
+    // Return the inserted item (you might want to fetch it fully)
     return result;
   }
 

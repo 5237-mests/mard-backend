@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { ItemService } from "../services/itemService";
+import { Item } from "../types/database";
+import fs from "fs/promises";
 
 class ItemController {
   /**

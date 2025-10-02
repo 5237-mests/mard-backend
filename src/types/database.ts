@@ -39,15 +39,15 @@ export interface Brand {
 }
 
 export interface Item {
-  id: number;
+  id?: number;
   name: string;
+  description?: string;
   model: string;
-  description: string | null;
   price: number;
   brand_id: number;
   category_id: number | null;
-  // stock_quantity: number;
   minimum_stock: number;
+  image?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
