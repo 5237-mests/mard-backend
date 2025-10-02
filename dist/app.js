@@ -55,6 +55,9 @@ app.use(express_1.default.json());
 // app.use(performanceLogger);
 // Serve static files from the "public" directory
 app.use(express_1.default.static(path_1.default.join(__dirname, "../client")));
+// app.use("/uploads", express.static("public/uploads"));
+// Serve uploads via /uploads URL.
+app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
 // API Routes
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/users", userRoutes_1.default);
