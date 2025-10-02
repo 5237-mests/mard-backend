@@ -32,7 +32,7 @@ export class ItemService {
    * @param item - The item object containing the details to create.
    * @returns {Promise<Item>} A promise that resolves to the newly created item object.
    */
-  async createItem1(item: Item) {
+  async createItem01(item: Item) {
     const params = [
       item.name,
       item.description,
@@ -58,7 +58,7 @@ export class ItemService {
   }
 
   async createItem(item: Item) {
-    // Check if item exists by name
+    // Check if item exists by name.
     const checkSql = `SELECT * FROM items WHERE name = ?`;
     const existingItems = await query(checkSql, [item.name]);
     if (existingItems.length > 0) {
@@ -81,7 +81,7 @@ export class ItemService {
     ];
 
     const result = await query(sql, params);
-    // Return the inserted item (you might want to fetch it fully)
+    // Return the inserted item (you might want to fetch it fully).
     return result;
   }
 

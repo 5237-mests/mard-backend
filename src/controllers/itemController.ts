@@ -53,7 +53,7 @@ class ItemController {
    * @param res - Express response object
    * @returns  A promise that resolves when the response has been sent
    */
-  async createItem1(req: Request, res: Response) {
+  async createItem01(req: Request, res: Response) {
     const newItem = req.body;
     if (!newItem || !newItem.name || !newItem.category_id) {
       return res.status(400).json({ error: "Invalid item data" });
@@ -80,7 +80,7 @@ class ItemController {
     const imageFile = req.file;
 
     if (!newItem || !newItem.name || !newItem.category_id) {
-      if (imageFile) await fs.unlink(imageFile.path).catch(() => {}); // Cleanup on error
+      if (imageFile) await fs.unlink(imageFile.path).catch(() => {}); // Cleanup on errorr
       return res.status(400).json({ error: "Invalid item data" });
     }
 
@@ -100,7 +100,7 @@ class ItemController {
     } catch (error) {
       console.error("Error creating item:", error);
       if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
-      res.status(500).json({ error: "Failed to create item" });
+      res.status(500).json({ error: "Failed to create item." });
     }
   }
 
