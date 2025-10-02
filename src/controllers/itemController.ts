@@ -144,7 +144,7 @@ class ItemController {
       let oldImagePath: string | null = null;
 
       if (imageFile) {
-        imagePath = `/uploads/products/${imageFile.filename}`;
+        imagePath = `/uploads/${imageFile.filename}`;
         // Fetch old image to delete later
         const itemService = new ItemService();
         const existingItem = await itemService.getItemById(id);

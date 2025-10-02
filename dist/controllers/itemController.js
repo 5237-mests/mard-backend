@@ -160,7 +160,7 @@ class ItemController {
                 let imagePath = updatedItem.image; // Existing image if no new upload
                 let oldImagePath = null;
                 if (imageFile) {
-                    imagePath = `/uploads/products/${imageFile.filename}`;
+                    imagePath = `/uploads/${imageFile.filename}`;
                     // Fetch old image to delete later
                     const itemService = new itemService_1.ItemService();
                     const existingItem = yield itemService.getItemById(id);
