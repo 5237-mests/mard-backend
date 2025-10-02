@@ -45,7 +45,7 @@ class ItemService {
      * @param item - The item object containing the details to create.
      * @returns {Promise<Item>} A promise that resolves to the newly created item object.
      */
-    createItem(item) {
+    createItem01(item) {
         return __awaiter(this, void 0, void 0, function* () {
             const params = [
                 item.name,
@@ -66,6 +66,33 @@ class ItemService {
             // const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
             const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?)`;
             const result = yield (0, db_1.query)(sql, params);
+            return result;
+        });
+    }
+    createItem(item) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Check if item exists by name.
+            const checkSql = `SELECT * FROM items WHERE name = ?`;
+            const existingItems = yield (0, db_1.query)(checkSql, [item.name]);
+            if (existingItems.length > 0) {
+                return null;
+            }
+            const sql = `
+      INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock, image)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+            const params = [
+                item.name,
+                item.description || null,
+                item.model,
+                item.price,
+                item.brand_id,
+                item.category_id || null,
+                item.minimum_stock || 0,
+                item.image || null,
+            ];
+            const result = yield (0, db_1.query)(sql, params);
+            // Return the inserted item (you might want to fetch it fully)
             return result;
         });
     }

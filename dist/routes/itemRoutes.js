@@ -21,7 +21,7 @@ const promises_1 = __importDefault(require("fs/promises"));
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => __awaiter(void 0, void 0, void 0, function* () {
         // const uploadDir = "public/uploads/products";
-        // “/home/mardtryj/uploads/products”.
+        // “/home/mardtryj/uploads/products”
         // Save outside the repo.
         const uploadDir = path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products");
         try {
