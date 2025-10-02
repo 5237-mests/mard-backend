@@ -59,24 +59,25 @@ router.get(
   itemController.getItemById.bind(itemController)
 );
 
-// router.post(
-//   "/create",
-//   authenticateToken,
-//   authorizeRole(["ADMIN"]),
-//   itemController.createItem.bind(itemController)
-// );
 router.post(
   "/create",
   authenticateToken,
   authorizeRole(["ADMIN"]),
-  upload.single("image"), // Add this for image upload
+  upload.single("image"), //image upload
   itemController.createItem.bind(itemController)
 );
 
+// router.put(
+//   "/update/:id",
+//   authenticateToken,
+//   authorizeRole(["ADMIN"]),
+//   itemController.updateItem.bind(itemController)
+// );
 router.put(
   "/update/:id",
   authenticateToken,
   authorizeRole(["ADMIN"]),
+  upload.single("image"), // image update
   itemController.updateItem.bind(itemController)
 );
 
@@ -86,4 +87,5 @@ router.delete(
   authorizeRole(["ADMIN"]),
   itemController.deleteItem.bind(itemController)
 );
+
 export default router;

@@ -22,9 +22,9 @@ export class ItemService {
    * @param id - The ID of the item to retrieve.
    * @returns {Promise<Item | null>} A promise that resolves to the item object if found, otherwise null.
    */
-  async getItemById(id: number) {
+  async getItemById(id: number): Promise<Item | null> {
     const sql = `SELECT * FROM items WHERE id = ?`;
-    const result = await query(sql, [id]);
+    const result: Item = await query(sql, [id]);
     return result;
   }
   /**
@@ -91,13 +91,59 @@ export class ItemService {
    * @param itemData - The item object containing the details to update.
    * @returns {Promise<Item | null>} A promise that resolves to the item object if found and updated, otherwise null.
    */
-  async updateItem(id: number, itemData: Partial<Item>) {
+  async updateItem01(id: number, itemData: Partial<Item>) {
     const setValues = Object.entries(itemData)
       .filter(([_, value]) => value !== undefined)
       .map(([key, value]) => `${key} = ?`)
       .join(", ");
     const updateSql = `UPDATE items SET ${setValues} WHERE id = ?`;
     const result = await query(updateSql, [...Object.values(itemData), id]);
+    return result;
+  }
+
+  async updateItem(id: number, item: Partial<Item>) {
+    const fields: string[] = [];
+    const params: any[] = [];
+
+    if (item.name !== undefined) {
+      fields.push("name = ?");
+      params.push(item.name);
+    }
+    if (item.description !== undefined) {
+      fields.push("description = ?");
+      params.push(item.description);
+    }
+    if (item.model !== undefined) {
+      fields.push("model = ?");
+      params.push(item.model);
+    }
+    if (item.price !== undefined) {
+      fields.push("price = ?");
+      params.push(item.price);
+    }
+    if (item.brand_id !== undefined) {
+      fields.push("brand_id = ?");
+      params.push(item.brand_id);
+    }
+    if (item.category_id !== undefined) {
+      fields.push("category_id = ?");
+      params.push(item.category_id);
+    }
+    if (item.minimum_stock !== undefined) {
+      fields.push("minimum_stock = ?");
+      params.push(item.minimum_stock);
+    }
+    if (item.image !== undefined) {
+      fields.push("image = ?");
+      params.push(item.image);
+    }
+
+    if (fields.length === 0) return true; // Nothing to update
+
+    const sql = `UPDATE items SET ${fields.join(", ")} WHERE id = ?`;
+    params.push(id);
+
+    const result = await query(sql, params);
     return result;
   }
 
