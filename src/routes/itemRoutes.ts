@@ -8,7 +8,7 @@ import fs from "fs/promises";
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     // const uploadDir = "public/uploads/products";
-    // “/home/mardtryj/uploads/products”.
+    // “/home/mardtryj/uploads/products”
     // Save outside the repo.
     const uploadDir = path.join(
       process.env.HOME || "/home/mardtryj",
