@@ -45,30 +45,6 @@ class ItemService {
      * @param item - The item object containing the details to create.
      * @returns {Promise<Item>} A promise that resolves to the newly created item object.
      */
-    createItem01(item) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const params = [
-                item.name,
-                item.description,
-                item.model,
-                item.price,
-                item.brand_id,
-                item.category_id,
-                // item.stock_quantity,
-                item.minimum_stock,
-            ];
-            // Check product existed by name
-            const checkSql = `SELECT * FROM items WHERE name = ?`;
-            const existingItems = yield (0, db_1.query)(checkSql, [item.name]);
-            if (existingItems.length > 0) {
-                return null;
-            }
-            // const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, stock_quantity, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-            const sql = `INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-            const result = yield (0, db_1.query)(sql, params);
-            return result;
-        });
-    }
     createItem(item) {
         return __awaiter(this, void 0, void 0, function* () {
             // Check if item exists by name.
@@ -78,11 +54,12 @@ class ItemService {
                 return null;
             }
             const sql = `
-      INSERT INTO items (name, description, model, price, brand_id, category_id, minimum_stock, image)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO items (name, code, description, model, price, brand_id, category_id, minimum_stock, image)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
             const params = [
                 item.name,
+                item.code || null,
                 item.description || null,
                 item.model,
                 item.price,
@@ -120,6 +97,10 @@ class ItemService {
             if (item.name !== undefined) {
                 fields.push("name = ?");
                 params.push(item.name);
+            }
+            if (item.code !== undefined) {
+                fields.push("code = ?");
+                params.push(item.code);
             }
             if (item.description !== undefined) {
                 fields.push("description = ?");

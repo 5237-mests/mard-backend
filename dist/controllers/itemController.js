@@ -67,29 +67,6 @@ class ItemController {
      * @param res - Express response object
      * @returns  A promise that resolves when the response has been sent
      */
-    createItem01(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const newItem = req.body;
-            if (!newItem || !newItem.name || !newItem.category_id) {
-                return res.status(400).json({ error: "Invalid item data" });
-            }
-            try {
-                const itemService = new itemService_1.ItemService();
-                const createdItem = yield itemService.createItem(newItem);
-                // If item with the same name exists
-                if (!createdItem) {
-                    return res
-                        .status(400)
-                        .json({ error: "Item with the same name already exists" });
-                }
-                res.status(201).json(createdItem);
-            }
-            catch (error) {
-                console.error("Error creating item:", error);
-                res.status(500).json({ error: "Failed to create item" });
-            }
-        });
-    }
     createItem(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const newItem = req.body;

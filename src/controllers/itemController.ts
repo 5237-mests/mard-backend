@@ -53,28 +53,6 @@ class ItemController {
    * @param res - Express response object
    * @returns  A promise that resolves when the response has been sent
    */
-  async createItem01(req: Request, res: Response) {
-    const newItem = req.body;
-    if (!newItem || !newItem.name || !newItem.category_id) {
-      return res.status(400).json({ error: "Invalid item data" });
-    }
-
-    try {
-      const itemService = new ItemService();
-      const createdItem = await itemService.createItem(newItem);
-      // If item with the same name exists
-      if (!createdItem) {
-        return res
-          .status(400)
-          .json({ error: "Item with the same name already exists" });
-      }
-      res.status(201).json(createdItem);
-    } catch (error) {
-      console.error("Error creating item:", error);
-      res.status(500).json({ error: "Failed to create item" });
-    }
-  }
-
   async createItem(req: Request, res: Response) {
     const newItem: Item = req.body;
     const imageFile = req.file;

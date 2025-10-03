@@ -41,6 +41,7 @@ export interface Brand {
 export interface Item {
   id?: number;
   name: string;
+  code?: string;
   description?: string;
   model: string;
   price: number;
