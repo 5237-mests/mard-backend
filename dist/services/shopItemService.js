@@ -112,6 +112,7 @@ class ShopItemService {
                 i.model AS model,
                 c.name AS category,
                 b.name AS brand,
+                i.image,
                 i.price AS price,
                 i.minimum_stock
             FROM shop_items si
