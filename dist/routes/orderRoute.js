@@ -44,7 +44,7 @@ router.get("/me", authMiddleware_1.authenticateToken, authMiddleware_1.authorize
 router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), orderController.getAllOrders);
 // router.get("/", authenticateToken, authorizeUser, orderController.getByUser);
 router.put("/:orderId", orderController.updateDelivery);
-router.get("/:orderId", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), orderController.getById);
+router.get("/:orderId", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, orderController.getById);
 // update order status
 router.put("/:orderId/:status", authMiddleware_1.authenticateToken, orderController.updateStatus);
 // PUT /orders/:orderId/items/:itemId

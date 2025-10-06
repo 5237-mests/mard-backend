@@ -26,7 +26,7 @@ router.put("/:orderId", orderController.updateDelivery);
 router.get(
   "/:orderId",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeUser,
   orderController.getById
 );
 

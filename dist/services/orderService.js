@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refundOrder = exports.deleteOrder = exports.removeOrderItem = exports.updateOrderItem = exports.updateOrderStatus2 = exports.updateOrderStatus = exports.updateOrderDelivery = exports.getOrderById = exports.getOrderById0 = exports.getAllOrders = exports.getOrdersByUser = exports.createOrder = void 0;
+exports.refundOrder = exports.deleteOrder = exports.removeOrderItem = exports.updateOrderItem = exports.updateOrderStatus2 = exports.updateOrderStatus = exports.updateOrderDelivery = exports.getOrderById = exports.getOrderById1 = exports.getOrderById0 = exports.getAllOrders = exports.getOrdersByUser = exports.getOrdersByUse01r = exports.createOrder = void 0;
 const db_1 = require("../config/db");
 const AppError_1 = __importDefault(require("../utils/AppError"));
 const createOrder = (orderData) => __awaiter(void 0, void 0, void 0, function* () {
@@ -51,14 +51,14 @@ const createOrder = (orderData) => __awaiter(void 0, void 0, void 0, function* (
     }));
 });
 exports.createOrder = createOrder;
-const getOrdersByUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+const getOrdersByUse01r = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const sql = `
     SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
            oi.quantity, oi.price_at_order, oi.item_id
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     WHERE o.retailer_id = ?
-    ORDER BY o.created_at DESC
+    ORDER BY order_id DESC
   `;
     const rows = yield (0, db_1.query)(sql, [userId]);
     const orders = {};
@@ -86,6 +86,42 @@ const getOrdersByUser = (userId) => __awaiter(void 0, void 0, void 0, function* 
         orders[row.order_id].total_price += item_sub_total_price;
     });
     return Object.values(orders);
+});
+exports.getOrdersByUse01r = getOrdersByUse01r;
+const getOrdersByUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const sql = `
+    SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
+           oi.quantity, oi.price_at_order, oi.item_id
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    WHERE o.retailer_id = ?
+    ORDER BY o.created_at DESC  -- Sort by creation date: newest first
+  `;
+    const rows = yield (0, db_1.query)(sql, [userId]);
+    const orders = {};
+    rows.forEach((row) => {
+        if (!orders[row.order_id]) {
+            orders[row.order_id] = {
+                id: row.order_id, // Remap to match frontend
+                status: row.status,
+                delivery_details: row.delivery_details,
+                created_at: row.created_at,
+                total_amount: 0, // Remap and rename for frontend
+                items: [], // Keep if useful elsewhere
+            };
+        }
+        const itemSubTotalPrice = row.quantity * row.price_at_order;
+        orders[row.order_id].items.push({
+            item_id: row.item_id,
+            quantity: row.quantity,
+            price_at_order: row.price_at_order,
+            sub_total_price: itemSubTotalPrice,
+        });
+        // Compute totals (now on remapped field)
+        orders[row.order_id].total_amount += itemSubTotalPrice;
+    });
+    // Safety net sort by created_at (newest first; redundant with SQL but ensures consistency)
+    return Object.values(orders).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 });
 exports.getOrdersByUser = getOrdersByUser;
 const getAllOrders = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -136,12 +172,15 @@ const getOrderById0 = (orderId) => __awaiter(void 0, void 0, void 0, function* (
     return yield (0, db_1.query)(sql, [orderId]);
 });
 exports.getOrderById0 = getOrderById0;
-const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* () {
+const getOrderById1 = (orderId) => __awaiter(void 0, void 0, void 0, function* () {
+    // ADD ITEMS NAME & PRICE
     const sql = `
     SELECT o.id as order_id, o.delivery_details, o.created_at, o.status,
+           i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
+    JOIN items i ON oi.item_id = i.id
     WHERE o.id = ?
   `;
     const rows = yield (0, db_1.query)(sql, [orderId]);
@@ -166,6 +205,43 @@ const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* ()
         });
         order.total_quantity += row.quantity;
         order.total_price += itemTotal;
+    });
+    return order;
+});
+exports.getOrderById1 = getOrderById1;
+const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* () {
+    // Fetch order details with item names and current prices
+    const sql = `
+    SELECT o.id as order_id, o.delivery_details, o.created_at, o.status,
+           i.name as item_name, i.price as current_price,
+           oi.item_id, oi.quantity, oi.price_at_order
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN items i ON oi.item_id = i.id
+    WHERE o.id = ?
+  `;
+    const rows = yield (0, db_1.query)(sql, [orderId]);
+    if (rows.length === 0)
+        return null;
+    const order = {
+        id: rows[0].order_id, // Remap to match frontend expectations
+        delivery_details: rows[0].delivery_details,
+        created_at: rows[0].created_at,
+        status: rows[0].status,
+        total_amount: 0, // Remap and rename for frontend
+        items: [],
+    };
+    rows.forEach((row) => {
+        const itemTotal = row.quantity * row.price_at_order;
+        order.items.push({
+            item_id: row.item_id,
+            name: row.item_name, // Include item name
+            quantity: row.quantity,
+            price_at_order: row.price_at_order,
+            current_price: row.current_price, // Include current price
+            item_total: itemTotal,
+        });
+        order.total_amount += itemTotal;
     });
     return order;
 });

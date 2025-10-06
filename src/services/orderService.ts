@@ -72,14 +72,14 @@ export const createOrder = async (orderData: CreateOrderInput) => {
   });
 };
 
-export const getOrdersByUser = async (userId: number) => {
+export const getOrdersByUse01r = async (userId: number) => {
   const sql = `
     SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
            oi.quantity, oi.price_at_order, oi.item_id
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     WHERE o.retailer_id = ?
-    ORDER BY o.created_at DESC
+    ORDER BY order_id DESC
   `;
 
   const rows: any[] = await query(sql, [userId]);
@@ -114,6 +114,51 @@ export const getOrdersByUser = async (userId: number) => {
   });
 
   return Object.values(orders);
+};
+export const getOrdersByUser = async (userId: number) => {
+  const sql = `
+    SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
+           oi.quantity, oi.price_at_order, oi.item_id
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    WHERE o.retailer_id = ?
+    ORDER BY o.created_at DESC  -- Sort by creation date: newest first
+  `;
+
+  const rows: any[] = await query(sql, [userId]);
+
+  const orders: Record<number, any> = {};
+
+  rows.forEach((row) => {
+    if (!orders[row.order_id]) {
+      orders[row.order_id] = {
+        id: row.order_id, // Remap to match frontend
+        status: row.status,
+        delivery_details: row.delivery_details,
+        created_at: row.created_at,
+        total_amount: 0, // Remap and rename for frontend
+        items: [], // Keep if useful elsewhere
+      };
+    }
+
+    const itemSubTotalPrice = row.quantity * row.price_at_order;
+
+    orders[row.order_id].items.push({
+      item_id: row.item_id,
+      quantity: row.quantity,
+      price_at_order: row.price_at_order,
+      sub_total_price: itemSubTotalPrice,
+    });
+
+    // Compute totals (now on remapped field)
+    orders[row.order_id].total_amount += itemSubTotalPrice;
+  });
+
+  // Safety net sort by created_at (newest first; redundant with SQL but ensures consistency)
+  return Object.values(orders).sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 };
 
 export const getAllOrders = async () => {
@@ -170,12 +215,15 @@ export const getOrderById0 = async (orderId: number) => {
   `;
   return await query(sql, [orderId]);
 };
-export const getOrderById = async (orderId: number) => {
+export const getOrderById1 = async (orderId: number) => {
+  // ADD ITEMS NAME & PRICE
   const sql = `
     SELECT o.id as order_id, o.delivery_details, o.created_at, o.status,
+           i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
+    JOIN items i ON oi.item_id = i.id
     WHERE o.id = ?
   `;
 
@@ -205,6 +253,48 @@ export const getOrderById = async (orderId: number) => {
 
     order.total_quantity += row.quantity;
     order.total_price += itemTotal;
+  });
+
+  return order;
+};
+export const getOrderById = async (orderId: number) => {
+  // Fetch order details with item names and current prices
+  const sql = `
+    SELECT o.id as order_id, o.delivery_details, o.created_at, o.status,
+           i.name as item_name, i.price as current_price,
+           oi.item_id, oi.quantity, oi.price_at_order
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN items i ON oi.item_id = i.id
+    WHERE o.id = ?
+  `;
+
+  const rows: any[] = await query(sql, [orderId]);
+
+  if (rows.length === 0) return null;
+
+  const order = {
+    id: rows[0].order_id, // Remap to match frontend expectations
+    delivery_details: rows[0].delivery_details,
+    created_at: rows[0].created_at,
+    status: rows[0].status,
+    total_amount: 0, // Remap and rename for frontend
+    items: [] as any[],
+  };
+
+  rows.forEach((row) => {
+    const itemTotal = row.quantity * row.price_at_order;
+
+    order.items.push({
+      item_id: row.item_id,
+      name: row.item_name, // Include item name
+      quantity: row.quantity,
+      price_at_order: row.price_at_order,
+      current_price: row.current_price, // Include current price
+      item_total: itemTotal,
+    });
+
+    order.total_amount += itemTotal;
   });
 
   return order;

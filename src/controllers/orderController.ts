@@ -27,7 +27,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
 export const getByUser = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.user?.user?.id);
-    console.log("get o b u>", userId);
+    // console.log("get o b u>", userId);
     const orders = await orderService.getOrdersByUser(userId);
     res.json(orders);
   } catch (error) {

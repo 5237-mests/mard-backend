@@ -74,7 +74,7 @@ const getByUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
         const userId = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
-        console.log("get o b u>", userId);
+        // console.log("get o b u>", userId);
         const orders = yield orderService.getOrdersByUser(userId);
         res.json(orders);
     }
