@@ -1,11 +1,11 @@
 {
-  "name": "MARD Trading",
-  "short_name": "MARD",
+  "name": "Mard Trading",
+  "short_name": "Mard",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#00C853",
   "theme_color": "#00C853",
-  "description": "MARD Trading - Retailer Portal for managing store and shop items.",
+  "description": "Mard Trading - Retailer Portal for managing store and shop items.",
   "orientation": "portrait",
   "icons": [
     {
