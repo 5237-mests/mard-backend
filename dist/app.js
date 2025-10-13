@@ -5,8 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
 // import cors from "cors";
-// import morgan from "morgan";
+const db_1 = __importDefault(require("./config/db"));
+const logger_1 = __importDefault(require("./config/logger"));
+const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
+// --- Import routes ---
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
@@ -21,45 +25,38 @@ const itemRoutes_1 = __importDefault(require("./routes/itemRoutes"));
 const shopItemRoute_1 = __importDefault(require("./routes/shopItemRoute"));
 const ShopShopkeeperRoute_1 = __importDefault(require("./routes/ShopShopkeeperRoute"));
 const salesRoute_1 = __importDefault(require("./routes/salesRoute"));
-// import adminRoutes from "./routes/adminRoutes";
 const retailerRoutes_1 = __importDefault(require("./routes/retailerRoutes"));
 const factoryAgentRoutes_1 = __importDefault(require("./routes/factoryAgentRoutes"));
-const db_1 = __importDefault(require("./config/db"));
-const logger_1 = __importDefault(require("./config/logger"));
 const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
 const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
 const salesRoutes2_1 = __importDefault(require("./routes/salesRoutes2"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
-// import { logStream } from "./config/logger";
-// import {
-// apiLogger,
-// errorLogger,
-// performanceLogger,
-// } from "./middleware/apiLogger";
-const path_1 = __importDefault(require("path"));
-const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
 dotenv_1.default.config();
+(0, db_1.default)();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
-// Middleware
+// --- Middleware ---
 app.use(express_1.default.json());
-(0, db_1.default)();
-// CORS configuration
+// --- CORS configuration ---
 // const corsOptions = {
 //   origin: "http://localhost:8080",
 //   credentials: true,
 // };
 // app.use(cors(corsOptions));
-// Logging middleware
-// app.use(morgan("combined", { stream: logStream }));
-// app.use(apiLogger);
-// app.use(performanceLogger);
-// Serve static files from the "public" directory
-app.use(express_1.default.static(path_1.default.join(__dirname, "../client")));
-// app.use("/uploads", express.static("public/uploads"));
-// Serve uploads via /uploads URL.
+// --- Static files (Vite build) ---
+const clientBuildPath = path_1.default.join(__dirname, "../client/dist");
+app.use(express_1.default.static(clientBuildPath, {
+    maxAge: "1h", // Cache assets for 1 hour
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+            // Always serve HTML fresh
+            res.setHeader("Cache-Control", "no-cache");
+        }
+    },
+}));
+// --- Serve uploads ---
 app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
-// API Routes
+// --- API Routes ---
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/users", userRoutes_1.default);
 app.use("/api/brands", brandRoutes_1.default);
@@ -76,20 +73,17 @@ app.use("/api/inventory", inventoryRoutes_1.default);
 app.use("/api", salesRoute_1.default);
 app.use("/api", retailerRoutes_1.default);
 app.use("/api", factoryAgentRoutes_1.default);
-// app.use("/api/order", adminRoutes);
 app.use("/api/cart", cartRoute_1.default);
 app.use("/api/orders", orderRoute_1.default);
 app.use("/api/sales2", salesRoutes2_1.default);
 app.use("/api/payment", paymentRoutes_1.default);
-// Error logging middleware (must be after all routes)
-// app.use(errorLogger);
-// Global error handler (must be last)
-app.use(errorHandler_1.default);
-// Serve the React app for all other routes
+// --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, "../client/index.html"));
+    res.sendFile(path_1.default.join(clientBuildPath, "index.html"));
 });
-// Start the server
+// --- Global error handler ---
+app.use(errorHandler_1.default);
+// --- Start server ---
 app.listen(PORT, () => {
-    logger_1.default.info(`Server is running on http://localhost:${PORT}`);
+    logger_1.default.info(`✅ Server running on http://localhost:${PORT}`);
 });
