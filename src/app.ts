@@ -24,6 +24,8 @@ import logger from "./config/logger";
 import cartRoutes from "./routes/cartRoute";
 import orderRoutes from "./routes/orderRoute";
 import salesroutes2 from "./routes/salesRoutes2";
+import paymentRoutes from "./routes/paymentRoutes";
+
 // import { logStream } from "./config/logger";
 // import {
 // apiLogger,
@@ -89,7 +91,7 @@ app.use("/api", factoryAgentRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/sales2", salesroutes2);
-
+app.use("/api/payment", paymentRoutes);
 // Error logging middleware (must be after all routes)
 // app.use(errorLogger);
 

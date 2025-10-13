@@ -199,6 +199,7 @@ export interface SaleItemInput {
 export interface SaleRequestBody {
   shopId: string;
   soldById: number;
+  email: string;
   customerName?: string;
   customerContact?: string;
   items: SaleItemInput[];

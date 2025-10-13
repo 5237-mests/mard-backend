@@ -1,6 +1,7 @@
 import express from "express";
 import { SalesController } from "../controllers/salesController";
 import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
+import { SalesPaymentController } from "../controllers/salesPaymentController";
 
 const router = express.Router();
 
@@ -11,6 +12,8 @@ router.post(
   authorizeRole(["ADMIN", "SHOPKEEPER"]),
   SalesController.createSale
 );
+
+router.post("/sales/pay", authenticateToken, SalesPaymentController.paySale);
 
 // GET /api/sales?shopId= - Retrieve sales for a specific shop
 router.get("/sales", authenticateToken, SalesController.getSales);

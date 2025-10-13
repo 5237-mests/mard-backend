@@ -29,6 +29,7 @@ const logger_1 = __importDefault(require("./config/logger"));
 const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
 const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
 const salesRoutes2_1 = __importDefault(require("./routes/salesRoutes2"));
+const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 // import { logStream } from "./config/logger";
 // import {
 // apiLogger,
@@ -79,6 +80,7 @@ app.use("/api", factoryAgentRoutes_1.default);
 app.use("/api/cart", cartRoute_1.default);
 app.use("/api/orders", orderRoute_1.default);
 app.use("/api/sales2", salesRoutes2_1.default);
+app.use("/api/payment", paymentRoutes_1.default);
 // Error logging middleware (must be after all routes)
 // app.use(errorLogger);
 // Global error handler (must be last)
