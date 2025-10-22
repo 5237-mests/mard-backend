@@ -31,6 +31,7 @@ const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
 const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
 const salesRoutes2_1 = __importDefault(require("./routes/salesRoutes2"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
+const itemTransferRoutes_1 = __importDefault(require("./routes/itemTransferRoutes"));
 dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
@@ -47,10 +48,30 @@ app.use(express_1.default.json());
 const clientBuildPath = path_1.default.join(__dirname, "../client/dist");
 app.use(express_1.default.static(clientBuildPath, {
     maxAge: "1h", // Cache assets for 1 hour
+    etag: true,
+    lastModified: true,
     setHeaders: (res, filePath) => {
         if (filePath.endsWith(".html")) {
-            // Always serve HTML fresh
-            res.setHeader("Cache-Control", "no-cache");
+            // Always serve HTML fresh to avoid stale builds
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            res.setHeader("Pragma", "no-cache");
+            res.setHeader("Expires", "0");
+        }
+        if (filePath.endsWith(".js")) {
+            // Ensure JavaScript files have correct MIME type
+            res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+            // Cache JS files but allow revalidation
+            res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
+        }
+        if (filePath.endsWith(".json")) {
+            // Ensure JSON files have correct MIME type
+            res.setHeader("Content-Type", "application/json; charset=utf-8");
+            // Don't cache manifest and other JSON files
+            res.setHeader("Cache-Control", "no-cache, must-revalidate");
+        }
+        if (filePath.endsWith(".css")) {
+            res.setHeader("Content-Type", "text/css; charset=utf-8");
+            res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
         }
     },
 }));
@@ -77,6 +98,7 @@ app.use("/api/cart", cartRoute_1.default);
 app.use("/api/orders", orderRoute_1.default);
 app.use("/api/sales2", salesRoutes2_1.default);
 app.use("/api/payment", paymentRoutes_1.default);
+app.use("/api/item-transfers", itemTransferRoutes_1.default);
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));

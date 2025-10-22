@@ -119,5 +119,40 @@ class ShopItemController {
             }
         });
     }
+    // Add multiple items to a shop
+    static addMultipleShopItems(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { shopId } = req.params;
+            const rawItems = (req.body && req.body.items) || [];
+            if (!Array.isArray(rawItems) || rawItems.length === 0) {
+                res
+                    .status(400)
+                    .json({ message: "Items array is required and cannot be empty." });
+                return;
+            }
+            // Normalize & validate each item
+            const items = [];
+            for (const it of rawItems) {
+                const itemId = Number(it === null || it === void 0 ? void 0 : it.itemId);
+                const quantity = Number(it === null || it === void 0 ? void 0 : it.quantity);
+                if (!Number.isInteger(itemId) ||
+                    !Number.isFinite(quantity) ||
+                    quantity <= 0) {
+                    res.status(400).json({
+                        message: "Each item must include integer itemId and a positive numeric quantity.",
+                    });
+                    return;
+                }
+                items.push({ itemId, quantity });
+            }
+            try {
+                const result = yield shopItemService_1.ShopItemService.addMultipleShopItems(parseInt(shopId, 10), items);
+                res.status(201).json(result);
+            }
+            catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+    }
 }
 exports.ShopItemController = ShopItemController;

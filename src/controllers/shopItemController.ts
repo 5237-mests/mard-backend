@@ -134,4 +134,49 @@ export class ShopItemController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  // Add multiple items to a shop
+  public static async addMultipleShopItems(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    const { shopId } = req.params;
+    const rawItems = (req.body && req.body.items) || [];
+
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
+      res
+        .status(400)
+        .json({ message: "Items array is required and cannot be empty." });
+      return;
+    }
+
+    // Normalize & validate each item
+    const items: { itemId: number; quantity: number }[] = [];
+    for (const it of rawItems) {
+      const itemId = Number(it?.itemId);
+      const quantity = Number(it?.quantity);
+      if (
+        !Number.isInteger(itemId) ||
+        !Number.isFinite(quantity) ||
+        quantity <= 0
+      ) {
+        res.status(400).json({
+          message:
+            "Each item must include integer itemId and a positive numeric quantity.",
+        });
+        return;
+      }
+      items.push({ itemId, quantity });
+    }
+
+    try {
+      const result = await ShopItemService.addMultipleShopItems(
+        parseInt(shopId, 10),
+        items
+      );
+      res.status(201).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }

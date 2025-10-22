@@ -199,4 +199,54 @@ export class ShopItemService {
       throw new Error("Could not fetch items for the shop.");
     }
   }
+
+  // Add multiple items to a shop
+  public static async addMultipleShopItems(
+    shopId: number,
+    items: { itemId: number; quantity: number }[]
+  ): Promise<void> {
+    if (!items || items.length === 0) {
+      return;
+    }
+
+    // Validate shop exists
+    const shopExists = await query("SELECT 1 FROM shops WHERE id = ?", [
+      shopId,
+    ]);
+    if (shopExists.length === 0) {
+      throw new Error("Shop not found.");
+    }
+
+    // Validate item ids exist
+    const itemIds = Array.from(new Set(items.map((it) => it.itemId)));
+    const placeholders = itemIds.map(() => "?").join(",");
+    const existingRows = await query(
+      `SELECT id FROM items WHERE id IN (${placeholders})`,
+      itemIds
+    );
+    const existingIds = new Set(existingRows.map((r: any) => r.id));
+    const missing = itemIds.filter((id) => !existingIds.has(id));
+    if (missing.length > 0) {
+      throw new Error(`Items not found: ${missing.join(", ")}`);
+    }
+
+    // Build single bulk insert with ON DUPLICATE KEY UPDATE
+    const valuePlaceholders = items.map(() => "(?, ?, ?)").join(", ");
+    const sql = `
+            INSERT INTO shop_items (shop_id, item_id, quantity)
+            VALUES ${valuePlaceholders}
+            ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+        `;
+    const params: any[] = [];
+    for (const it of items) {
+      params.push(shopId, it.itemId, it.quantity);
+    }
+
+    try {
+      await query(sql, params);
+    } catch (error: any) {
+      console.error("Error adding multiple shop items:", error);
+      throw new Error("Could not add multiple items to shop.");
+    }
+  }
 }

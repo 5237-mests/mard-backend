@@ -204,5 +204,47 @@ class ShopItemService {
             }
         });
     }
+    // Add multiple items to a shop
+    static addMultipleShopItems(shopId, items) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!items || items.length === 0) {
+                return;
+            }
+            // Validate shop exists
+            const shopExists = yield (0, db_1.query)("SELECT 1 FROM shops WHERE id = ?", [
+                shopId,
+            ]);
+            if (shopExists.length === 0) {
+                throw new Error("Shop not found.");
+            }
+            // Validate item ids exist
+            const itemIds = Array.from(new Set(items.map((it) => it.itemId)));
+            const placeholders = itemIds.map(() => "?").join(",");
+            const existingRows = yield (0, db_1.query)(`SELECT id FROM items WHERE id IN (${placeholders})`, itemIds);
+            const existingIds = new Set(existingRows.map((r) => r.id));
+            const missing = itemIds.filter((id) => !existingIds.has(id));
+            if (missing.length > 0) {
+                throw new Error(`Items not found: ${missing.join(", ")}`);
+            }
+            // Build single bulk insert with ON DUPLICATE KEY UPDATE
+            const valuePlaceholders = items.map(() => "(?, ?, ?)").join(", ");
+            const sql = `
+            INSERT INTO shop_items (shop_id, item_id, quantity)
+            VALUES ${valuePlaceholders}
+            ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+        `;
+            const params = [];
+            for (const it of items) {
+                params.push(shopId, it.itemId, it.quantity);
+            }
+            try {
+                yield (0, db_1.query)(sql, params);
+            }
+            catch (error) {
+                console.error("Error adding multiple shop items:", error);
+                throw new Error("Could not add multiple items to shop.");
+            }
+        });
+    }
 }
 exports.ShopItemService = ShopItemService;
