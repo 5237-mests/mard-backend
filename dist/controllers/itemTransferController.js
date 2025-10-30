@@ -60,4 +60,40 @@ exports.itemTransferController = {
             }
         });
     },
+    // transfer all item from shop to store
+    transferAllShopItemToStore(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            try {
+                const user_id = Number((_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user.id);
+                // Accept either params or body for ids to be flexible with routes
+                const shopId = Number((_b = req.params.shopId) !== null && _b !== void 0 ? _b : req.body.shopId);
+                const storeId = Number((_c = req.params.storeId) !== null && _c !== void 0 ? _c : req.body.storeId);
+                if (!Number.isInteger(shopId) || !Number.isInteger(storeId)) {
+                    res.status(400).json({
+                        message: "shopId and storeId are required and must be integers.",
+                    });
+                    return;
+                }
+                const transferId = yield itemTransferService_1.itemTransferService.transferAllShopItemToStore(shopId, storeId, user_id);
+                if (transferId === 0) {
+                    // Nothing to transfer
+                    res.status(200).json({ message: "No items to transfer." });
+                    return;
+                }
+                res
+                    .status(201)
+                    .json({ message: "Transfer created successfully", id: transferId });
+            }
+            catch (error) {
+                console.error("transferAllShopItemToStore error:", error);
+                // Propagate not-found errors as 404
+                if (error.message && /not found/i.test(error.message)) {
+                    res.status(404).json({ message: error.message });
+                    return;
+                }
+                res.status(500).json({ message: "Server error", error: error.message });
+            }
+        });
+    },
 };

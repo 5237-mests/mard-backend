@@ -1,5 +1,5 @@
 // Increment this version number when you deploy updates
-const CACHE_VERSION = "v3"; // Change this to v3, v4, etc. with each deployment
+const CACHE_VERSION = "v4"; // Change this to v3, v4, etc. with each deployment
 const CACHE_NAME = `mard-trading-cache-${CACHE_VERSION}`;
 const urlsToCache = ["/", "/index.html"];
 

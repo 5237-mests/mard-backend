@@ -12,14 +12,67 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.itemTransferService = void 0;
 const db_1 = require("../config/db");
 exports.itemTransferService = {
+    // Transfer all items from shop back to store
+    // remove everything in shop and add to store
+    transferAllShopItemToStore(shopId, storeId, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield (0, db_1.transaction)((connection) => __awaiter(this, void 0, void 0, function* () {
+                // validate shop
+                const [shopRows] = yield connection.execute("SELECT 1 FROM shops WHERE id = ?", [shopId]);
+                if (!shopRows || shopRows.length === 0) {
+                    throw new Error("Shop not found");
+                }
+                // validate store
+                const [storeRows] = yield connection.execute("SELECT 1 FROM stores WHERE id = ?", [storeId]);
+                if (!storeRows || storeRows.length === 0) {
+                    throw new Error("Store not found");
+                }
+                // get all items in the shop filter only if quantity > 0
+                const [shopItems] = yield connection.execute(
+                // "SELECT item_id, quantity FROM shop_items WHERE shop_id = ?",
+                "SELECT item_id, quantity FROM shop_items WHERE shop_id = ? AND quantity > 0", [shopId]);
+                if (!shopItems || shopItems.length === 0) {
+                    // nothing to transfer; return 0 to indicate no transfer created
+                    return 0;
+                }
+                // create transfer record
+                const [insertResult] = yield connection.execute(`INSERT INTO transfers (from_type, from_shop_id, to_type, to_store_id, created_by_id)
+         VALUES (?, ?, ?, ?, ?)`, ["shop", shopId, "store", storeId, userId]);
+                const transferId = insertResult.insertId;
+                // insert transfer_items rows
+                for (const it of shopItems) {
+                    yield connection.execute(`INSERT INTO transfer_items (transfer_id, item_id, quantity)
+           VALUES (?, ?, ?)`, [transferId, it.item_id, it.quantity]);
+                }
+                // upsert into store_items (add quantities)
+                const valuePlaceholders = shopItems.map(() => "(?, ?, ?)").join(", ");
+                const upsertSql = `
+        INSERT INTO store_items (store_id, item_id, quantity)
+        VALUES ${valuePlaceholders}
+        ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+      `;
+                const upsertParams = [];
+                for (const it of shopItems) {
+                    upsertParams.push(storeId, it.item_id, it.quantity);
+                }
+                yield connection.execute(upsertSql, upsertParams);
+                // remove all items from shop
+                yield connection.execute("DELETE FROM shop_items WHERE shop_id = ?", [
+                    shopId,
+                ]);
+                return transferId;
+            }));
+        });
+    },
+    // Create a new item transfer.
     createTransfer(_a) {
         return __awaiter(this, arguments, void 0, function* ({ fromType, fromId, toType, toId, items, }) {
             return yield (0, db_1.transaction)((connection) => __awaiter(this, void 0, void 0, function* () {
-                const [insertResult] = yield connection.execute(`INSERT INTO item_transfers (from_type, from_id, to_type, to_id)
+                const [insertResult] = yield connection.execute(`INSERT INTO transfers (from_type, from_id, to_type, to_id)
          VALUES (?, ?, ?, ?)`, [fromType, fromId, toType, toId]);
                 const transferId = insertResult.insertId;
                 for (const item of items) {
-                    yield connection.execute(`INSERT INTO transfer_items (transfer_id, product_id, quantity)
+                    yield connection.execute(`INSERT INTO transfer_items (transfer_id, item_id, quantity)
            VALUES (?, ?, ?)`, [transferId, item.product_id, item.quantity]);
                 }
                 return transferId;
@@ -38,7 +91,7 @@ exports.itemTransferService = {
         COALESCE(ts.name, tsh.name) AS to_name,
         t.status,
         t.created_at
-      FROM item_transfers t
+      FROM transfers t
       LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_shop_id = fs.id
       LEFT JOIN shops fsh ON t.from_type = 'shop' AND t.from_store_id = fsh.id
       LEFT JOIN stores ts ON t.to_type = 'store' AND t.to_store_id = ts.id
@@ -53,7 +106,7 @@ exports.itemTransferService = {
         t.*, 
         COALESCE(fs.name, fsh.name) AS from_name,
         COALESCE(ts.name, tsh.name) AS to_name
-      FROM item_transfers t
+      FROM transfers t
       LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_id = fs.id
       LEFT JOIN shops fsh ON t.from_type = 'shop' AND t.from_id = fsh.id
       LEFT JOIN stores ts ON t.to_type = 'store' AND t.to_id = ts.id

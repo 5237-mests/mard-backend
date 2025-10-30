@@ -12,6 +12,7 @@ interface User2 {
   role: Role;
   is_verified: boolean;
   shopId: string; // Added to include shop_id
+  storeId: number; // Added to include store_id
 }
 
 export class AuthService {
@@ -87,9 +88,10 @@ export class AuthService {
 
   async loginUser(email: string, password: string): Promise<User2> {
     const sql = `
-    SELECT u.*, ss.shop_id
+    SELECT u.*, ss.shop_id, sst.store_id
     FROM users u
     LEFT JOIN shop_shopkeepers ss ON u.id = ss.user_id
+    LEFT JOIN store_storekeepers sst ON u.id = sst.user_id
     WHERE u.email = ?
   `;
     const users = await query(sql, [email]);
@@ -109,6 +111,7 @@ export class AuthService {
       role: user.role,
       is_verified: user.is_verified,
       shopId: user.shop_id,
+      storeId: user.store_id,
     } as User2;
   }
 }

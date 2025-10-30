@@ -82,9 +82,10 @@ class AuthService {
     loginUser(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
             const sql = `
-    SELECT u.*, ss.shop_id
+    SELECT u.*, ss.shop_id, sst.store_id
     FROM users u
     LEFT JOIN shop_shopkeepers ss ON u.id = ss.user_id
+    LEFT JOIN store_storekeepers sst ON u.id = sst.user_id
     WHERE u.email = ?
   `;
             const users = yield (0, db_1.query)(sql, [email]);
@@ -104,6 +105,7 @@ class AuthService {
                 role: user.role,
                 is_verified: user.is_verified,
                 shopId: user.shop_id,
+                storeId: user.store_id,
             };
         });
     }

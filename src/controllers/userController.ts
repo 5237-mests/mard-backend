@@ -22,8 +22,8 @@ class UserController {
   }
 
   public async getUsersByRole(req: Request, res: Response) {
+    const role = req.params.role;
     try {
-      const { role } = req.query;
       if (!role) {
         return res.status(400).json({
           message:

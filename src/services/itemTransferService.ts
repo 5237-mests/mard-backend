@@ -14,6 +14,84 @@ export interface CreateTransferInput {
 }
 
 export const itemTransferService = {
+  // Transfer all items from shop back to store
+  // remove everything in shop and add to store
+  async transferAllShopItemToStore(
+    shopId: number,
+    storeId: number,
+    userId: number
+  ): Promise<number> {
+    return await transaction(async (connection) => {
+      // validate shop
+      const [shopRows]: any = await connection.execute(
+        "SELECT 1 FROM shops WHERE id = ?",
+        [shopId]
+      );
+      if (!shopRows || shopRows.length === 0) {
+        throw new Error("Shop not found");
+      }
+
+      // validate store
+      const [storeRows]: any = await connection.execute(
+        "SELECT 1 FROM stores WHERE id = ?",
+        [storeId]
+      );
+      if (!storeRows || storeRows.length === 0) {
+        throw new Error("Store not found");
+      }
+
+      // get all items in the shop filter only if quantity > 0
+      const [shopItems]: any = await connection.execute(
+        // "SELECT item_id, quantity FROM shop_items WHERE shop_id = ?",
+        "SELECT item_id, quantity FROM shop_items WHERE shop_id = ? AND quantity > 0",
+        [shopId]
+      );
+
+      if (!shopItems || shopItems.length === 0) {
+        // nothing to transfer; return 0 to indicate no transfer created
+        return 0;
+      }
+
+      // create transfer record
+      const [insertResult]: any = await connection.execute(
+        `INSERT INTO transfers (from_type, from_shop_id, to_type, to_store_id, created_by_id)
+         VALUES (?, ?, ?, ?, ?)`,
+        ["shop", shopId, "store", storeId, userId]
+      );
+      const transferId = insertResult.insertId;
+
+      // insert transfer_items rows
+      for (const it of shopItems) {
+        await connection.execute(
+          `INSERT INTO transfer_items (transfer_id, item_id, quantity)
+           VALUES (?, ?, ?)`,
+          [transferId, it.item_id, it.quantity]
+        );
+      }
+
+      // upsert into store_items (add quantities)
+      const valuePlaceholders = shopItems.map(() => "(?, ?, ?)").join(", ");
+      const upsertSql = `
+        INSERT INTO store_items (store_id, item_id, quantity)
+        VALUES ${valuePlaceholders}
+        ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+      `;
+      const upsertParams: any[] = [];
+      for (const it of shopItems) {
+        upsertParams.push(storeId, it.item_id, it.quantity);
+      }
+      await connection.execute(upsertSql, upsertParams);
+
+      // remove all items from shop
+      await connection.execute("DELETE FROM shop_items WHERE shop_id = ?", [
+        shopId,
+      ]);
+
+      return transferId;
+    });
+  },
+
+  // Create a new item transfer.
   async createTransfer({
     fromType,
     fromId,
@@ -23,7 +101,7 @@ export const itemTransferService = {
   }: CreateTransferInput): Promise<number> {
     return await transaction(async (connection) => {
       const [insertResult]: any = await connection.execute(
-        `INSERT INTO item_transfers (from_type, from_id, to_type, to_id)
+        `INSERT INTO transfers (from_type, from_id, to_type, to_id)
          VALUES (?, ?, ?, ?)`,
         [fromType, fromId, toType, toId]
       );
@@ -32,7 +110,7 @@ export const itemTransferService = {
 
       for (const item of items) {
         await connection.execute(
-          `INSERT INTO transfer_items (transfer_id, product_id, quantity)
+          `INSERT INTO transfer_items (transfer_id, item_id, quantity)
            VALUES (?, ?, ?)`,
           [transferId, item.product_id, item.quantity]
         );
@@ -54,7 +132,7 @@ export const itemTransferService = {
         COALESCE(ts.name, tsh.name) AS to_name,
         t.status,
         t.created_at
-      FROM item_transfers t
+      FROM transfers t
       LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_shop_id = fs.id
       LEFT JOIN shops fsh ON t.from_type = 'shop' AND t.from_store_id = fsh.id
       LEFT JOIN stores ts ON t.to_type = 'store' AND t.to_store_id = ts.id
@@ -70,7 +148,7 @@ export const itemTransferService = {
         t.*, 
         COALESCE(fs.name, fsh.name) AS from_name,
         COALESCE(ts.name, tsh.name) AS to_name
-      FROM item_transfers t
+      FROM transfers t
       LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_id = fs.id
       LEFT JOIN shops fsh ON t.from_type = 'shop' AND t.from_id = fsh.id
       LEFT JOIN stores ts ON t.to_type = 'store' AND t.to_id = ts.id

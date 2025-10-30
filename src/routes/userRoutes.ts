@@ -13,7 +13,7 @@ router.get(
   userController.listAllUsers.bind(userController)
 );
 
-// Route to get shopekeepers from users
+// Route to get shopekeepers or storekeeper from users
 router.get(
   "/",
   authenticateToken,
