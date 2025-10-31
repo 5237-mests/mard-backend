@@ -17,7 +17,6 @@ exports.itemTransferController = {
             var _a;
             try {
                 const user_id = Number((_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user.id);
-                console.log("c. body", req.body);
                 const { fromType, fromId, toType, toId, items } = req.body;
                 if (!fromType || !fromId || !toType || !toId || !(items === null || items === void 0 ? void 0 : items.length)) {
                     res.status(400).json({ message: "Invalid transfer data" });

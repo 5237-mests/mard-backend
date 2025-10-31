@@ -155,9 +155,9 @@ export const itemTransferService = {
         .toString(36)
         .slice(2, 8)}`;
       const [insertResult]: any = await connection.execute(
-        `INSERT INTO transfers (reference, from_type, from_${fromType}_id, to_type, to_${toType}_id, created_by_id)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [reference, fromType, fromId, toType, toId, user_id]
+        `INSERT INTO transfers (reference, from_type, from_${fromType}_id, to_type, to_${toType}_id, created_by_id, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [reference, fromType, fromId, toType, toId, user_id, "completed"]
       );
       const transferId = insertResult.insertId;
 

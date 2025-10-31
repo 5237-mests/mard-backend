@@ -5,7 +5,6 @@ export const itemTransferController = {
   async createTransfer(req: Request, res: Response): Promise<void> {
     try {
       const user_id = Number(req?.user?.user.id);
-      console.log("c. body", req.body);
       const { fromType, fromId, toType, toId, items } = req.body;
 
       if (!fromType || !fromId || !toType || !toId || !items?.length) {
