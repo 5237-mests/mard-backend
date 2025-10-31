@@ -1,5 +1,3 @@
-// File: src/routes/ShopShopkeeperRoute.ts
-// This file defines the API routes for the shop_shopkeepers relationship.
 import { Router } from "express";
 import { ShopShopkeeperController } from "../controllers/ShopShopkeeperController";
 

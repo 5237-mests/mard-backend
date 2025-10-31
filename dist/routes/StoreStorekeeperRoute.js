@@ -1,7 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// File: src/routes/storestorekeeperRoute.ts
-// This file defines the API routes for the store_storekeepers relationship.
 const express_1 = require("express");
 // import { storestorekeeperController } from "../controllers/storestorekeeperController";
 const StoreStorekeeperController_1 = require("../controllers/StoreStorekeeperController");

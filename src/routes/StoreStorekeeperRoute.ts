@@ -1,5 +1,3 @@
-// File: src/routes/storestorekeeperRoute.ts
-// This file defines the API routes for the store_storekeepers relationship.
 import { Router } from "express";
 // import { storestorekeeperController } from "../controllers/storestorekeeperController";
 import { storestorekeeperController } from "../controllers/StoreStorekeeperController";

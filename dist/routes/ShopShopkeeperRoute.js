@@ -1,7 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// File: src/routes/ShopShopkeeperRoute.ts
-// This file defines the API routes for the shop_shopkeepers relationship.
 const express_1 = require("express");
 const ShopShopkeeperController_1 = require("../controllers/ShopShopkeeperController");
 const authMiddleware_1 = require("../middleware/authMiddleware");
