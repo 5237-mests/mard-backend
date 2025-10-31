@@ -4,6 +4,8 @@ import { itemTransferService } from "../services/itemTransferService";
 export const itemTransferController = {
   async createTransfer(req: Request, res: Response): Promise<void> {
     try {
+      const user_id = Number(req?.user?.user.id);
+      console.log("c. body", req.body);
       const { fromType, fromId, toType, toId, items } = req.body;
 
       if (!fromType || !fromId || !toType || !toId || !items?.length) {
@@ -17,6 +19,7 @@ export const itemTransferController = {
         toType,
         toId: Number(toId),
         items,
+        user_id,
       });
 
       res
@@ -28,10 +31,43 @@ export const itemTransferController = {
     }
   },
 
-  async getAllTransfers(req: Request, res: Response): Promise<void> {
+  async getAllTransfers1(req: Request, res: Response): Promise<void> {
     try {
       const transfers = await itemTransferService.getAllTransfers();
       res.json(transfers);
+    } catch (error: any) {
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  },
+  async getAllTransfers(req: Request, res: Response): Promise<void> {
+    try {
+      // parse & validate query params
+      const {
+        status,
+        fromType,
+        fromDate,
+        toDate,
+        page = "1",
+        pageSize = "25",
+        search = "",
+      } = req.query;
+
+      const opts = {
+        status: typeof status === "string" && status ? status : undefined,
+        fromType:
+          typeof fromType === "string" && fromType ? fromType : undefined,
+        fromDate:
+          typeof fromDate === "string" && fromDate ? fromDate : undefined,
+        toDate: typeof toDate === "string" && toDate ? toDate : undefined,
+        search:
+          typeof search === "string" && search ? search.trim() : undefined,
+        page: Math.max(1, Number(page) || 1),
+        pageSize: Math.max(1, Math.min(500, Number(pageSize) || 25)),
+      };
+
+      const result = await itemTransferService.getAllTransfers(opts);
+      // result: { items, total }
+      res.json(result);
     } catch (error: any) {
       res.status(500).json({ message: "Server error", error: error.message });
     }

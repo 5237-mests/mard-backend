@@ -14,7 +14,10 @@ const itemTransferService_1 = require("../services/itemTransferService");
 exports.itemTransferController = {
     createTransfer(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
+                const user_id = Number((_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user.id);
+                console.log("c. body", req.body);
                 const { fromType, fromId, toType, toId, items } = req.body;
                 if (!fromType || !fromId || !toType || !toId || !(items === null || items === void 0 ? void 0 : items.length)) {
                     res.status(400).json({ message: "Invalid transfer data" });
@@ -26,6 +29,7 @@ exports.itemTransferController = {
                     toType,
                     toId: Number(toId),
                     items,
+                    user_id,
                 });
                 res
                     .status(201)
@@ -37,11 +41,34 @@ exports.itemTransferController = {
             }
         });
     },
-    getAllTransfers(req, res) {
+    getAllTransfers1(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const transfers = yield itemTransferService_1.itemTransferService.getAllTransfers();
                 res.json(transfers);
+            }
+            catch (error) {
+                res.status(500).json({ message: "Server error", error: error.message });
+            }
+        });
+    },
+    getAllTransfers(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // parse & validate query params
+                const { status, fromType, fromDate, toDate, page = "1", pageSize = "25", search = "", } = req.query;
+                const opts = {
+                    status: typeof status === "string" && status ? status : undefined,
+                    fromType: typeof fromType === "string" && fromType ? fromType : undefined,
+                    fromDate: typeof fromDate === "string" && fromDate ? fromDate : undefined,
+                    toDate: typeof toDate === "string" && toDate ? toDate : undefined,
+                    search: typeof search === "string" && search ? search.trim() : undefined,
+                    page: Math.max(1, Number(page) || 1),
+                    pageSize: Math.max(1, Math.min(500, Number(pageSize) || 25)),
+                };
+                const result = yield itemTransferService_1.itemTransferService.getAllTransfers(opts);
+                // result: { items, total }
+                res.json(result);
             }
             catch (error) {
                 res.status(500).json({ message: "Server error", error: error.message });

@@ -8,11 +8,21 @@ import {
 
 const router = Router();
 
-router.post("/", itemTransferController.createTransfer);
-router.get("/", itemTransferController.getAllTransfers);
+router.post(
+  "/create_transfer",
+  authenticateToken,
+  authorizeUser,
+  itemTransferController.createTransfer
+);
+router.get(
+  "/",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  itemTransferController.getAllTransfers
+);
 router.get("/:id", itemTransferController.getTransferById);
 
-// transfer all item from shop to store
+// transfer all item from shop to store.
 router.post(
   "/shops/:shopId/stores/:storeId",
   authenticateToken,
