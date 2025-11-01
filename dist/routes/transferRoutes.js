@@ -8,7 +8,7 @@ const express_1 = __importDefault(require("express"));
 const transferController_1 = require("../controllers/transferController");
 const router = express_1.default.Router();
 // List all transfer requests (Admin only)
-router.get("/", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), transferController_1.listTransferRequests);
+router.get("/", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "STOREKEEPER"]), transferController_1.listTransferRequests);
 // Admin direct transfer (Admin only)
 router.post("/admin", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), transferController_1.adminTransfer);
 // Request stock transfer (Shopkeeper only)

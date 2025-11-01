@@ -17,7 +17,7 @@ router.post(
 router.get(
   "/",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "STOREKEEPER"]),
   itemTransferController.getAllTransfers
 );
 router.get("/:id", itemTransferController.getTransferById);
