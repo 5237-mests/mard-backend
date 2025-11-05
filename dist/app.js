@@ -34,6 +34,8 @@ const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
 const salesRoutes2_1 = __importDefault(require("./routes/salesRoutes2"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const itemTransferRoutes_1 = __importDefault(require("./routes/itemTransferRoutes"));
+const deadstockRoutes_1 = __importDefault(require("./routes/deadstockRoutes"));
+const storeReceiveRoutes_1 = __importDefault(require("./routes/storeReceiveRoutes"));
 dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
@@ -77,7 +79,7 @@ app.use(express_1.default.static(clientBuildPath, {
         }
     },
 }));
-// --- Serve uploads ---
+// --- Serve uploads ---.
 app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
 // --- API Routes ---
 app.use("/api/auth", authRoutes_1.default);
@@ -103,7 +105,9 @@ app.use("/api/orders", orderRoute_1.default);
 app.use("/api/sales2", salesRoutes2_1.default);
 app.use("/api/payment", paymentRoutes_1.default);
 app.use("/api/item-transfers", itemTransferRoutes_1.default);
-// --- Catch-all route for React SPA ---
+app.use("/api/deadstock", deadstockRoutes_1.default);
+app.use("/api/store-receives", storeReceiveRoutes_1.default);
+// --- Catch-all route for React SPA ---.
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));
 });

@@ -22,7 +22,7 @@ router.get("/sales", authenticateToken, SalesController.getSales);
 router.get(
   "/sales/all",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]),
   SalesController.getAllSales
 );
 

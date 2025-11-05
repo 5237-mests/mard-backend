@@ -30,6 +30,8 @@ import orderRoutes from "./routes/orderRoute";
 import salesroutes2 from "./routes/salesRoutes2";
 import paymentRoutes from "./routes/paymentRoutes";
 import itemTransferRoutes from "./routes/itemTransferRoutes";
+import deadstockRoutes from "./routes/deadstockRoutes";
+import storeReceiveRoutes from "./routes/storeReceiveRoutes";
 
 dotenv.config();
 connectDB();
@@ -81,7 +83,7 @@ app.use(
   })
 );
 
-// --- Serve uploads ---
+// --- Serve uploads ---.
 app.use(
   "/uploads",
   express.static(
@@ -113,8 +115,10 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/sales2", salesroutes2);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/item-transfers", itemTransferRoutes);
+app.use("/api/deadstock", deadstockRoutes);
+app.use("/api/store-receives", storeReceiveRoutes);
 
-// --- Catch-all route for React SPA ---
+// --- Catch-all route for React SPA ---.
 app.get("*", (req, res) => {
   res.sendFile(path.join(clientBuildPath, "index.html"));
 });

@@ -9,7 +9,7 @@ const userController = new UserController();
 router.get(
   "/all",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]),
   userController.listAllUsers.bind(userController)
 );
 
