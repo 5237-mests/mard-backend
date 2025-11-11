@@ -109,6 +109,7 @@ class ShopItemService {
                 si.quantity,
                 i.id AS id,
                 i.name AS name,
+                i.code AS code,
                 i.model AS model,
                 c.name AS category,
                 b.name AS brand,
@@ -140,6 +141,7 @@ class ShopItemService {
                 si.quantity,
                 i.id AS item_id,
                 i.name AS item_name,
+                i.code AS item_code,
                 i.model AS item_model,
                 i.price AS item_price
             FROM shop_items si
@@ -164,6 +166,7 @@ class ShopItemService {
                 si.quantity,
                 i.id AS item_id,
                 i.name AS item_name,
+                i.code AS item_code,
                 i.model AS item_model,
                 i.price AS item_price
             FROM shop_items si
@@ -188,6 +191,7 @@ class ShopItemService {
                 si.quantity,
                 i.id AS item_id,
                 i.name AS item_name,
+                i.code AS item_code,
                 i.model AS item_model,
                 i.price AS item_price
             FROM shop_items si

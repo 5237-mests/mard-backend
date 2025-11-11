@@ -67,6 +67,13 @@ exports.itemTransferService = {
     // Create a new item transfer.
     createTransfer(_a) {
         return __awaiter(this, arguments, void 0, function* ({ fromType, fromId, toType, toId, items, user_id, }) {
+            // check user linked with store/shop?
+            const [userRows] = yield (0, db_1.query)(fromType === "store"
+                ? "SELECT 1 FROM store_storekeepers WHERE store_id = ? AND user_id = ?"
+                : "SELECT 1 FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [fromId, user_id]);
+            if (!userRows || userRows.length === 0) {
+                throw new Error("User not authorized for the source branch");
+            }
             if (!Array.isArray(items) || items.length === 0) {
                 throw new Error("Transfer must include at least one item");
             }
@@ -149,6 +156,121 @@ exports.itemTransferService = {
         });
     },
     getAllTransfers(opts) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            // build where clauses dynamically
+            const where = [];
+            const params = [];
+            if (opts === null || opts === void 0 ? void 0 : opts.status) {
+                where.push("t.status = ?");
+                params.push(opts.status);
+            }
+            if (opts === null || opts === void 0 ? void 0 : opts.fromType) {
+                where.push("t.from_type = ?");
+                params.push(opts.fromType);
+            }
+            if (opts === null || opts === void 0 ? void 0 : opts.fromDate) {
+                where.push("t.created_at >= ?");
+                params.push(`${opts.fromDate} 00:00:00`);
+            }
+            if (opts === null || opts === void 0 ? void 0 : opts.toDate) {
+                where.push("t.created_at <= ?");
+                params.push(`${opts.toDate} 23:59:59`);
+            }
+            if ((opts === null || opts === void 0 ? void 0 : opts.shop_id) !== undefined && (opts === null || opts === void 0 ? void 0 : opts.shop_id) !== null) {
+                where.push("(t.from_shop_id = ? OR t.to_shop_id = ?)");
+                params.push(opts.shop_id, opts.shop_id);
+            }
+            if ((opts === null || opts === void 0 ? void 0 : opts.store_id) !== undefined && (opts === null || opts === void 0 ? void 0 : opts.store_id) !== null) {
+                where.push("(t.from_store_id = ? OR t.to_store_id = ?)");
+                params.push(opts.store_id, opts.store_id);
+            }
+            // item-level search: include transfers that contain matching items
+            if (opts === null || opts === void 0 ? void 0 : opts.itemSearch) {
+                const s = `%${opts.itemSearch}%`;
+                where.push(`EXISTS (
+           SELECT 1 FROM transfer_items ti
+           JOIN items i ON ti.item_id = i.id
+           WHERE ti.transfer_id = t.id
+             AND (i.name LIKE ? OR i.code LIKE ? OR i.model LIKE ?)
+         )`);
+                params.push(s, s, s);
+            }
+            const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+            // count total matching rows (no aggregation)
+            const countSql = `
+      SELECT COUNT(*) AS total
+      FROM transfers t
+      LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_store_id = fs.id
+      LEFT JOIN shops  fsh ON t.from_type = 'shop'  AND t.from_shop_id  = fsh.id
+      LEFT JOIN stores ts ON t.to_type   = 'store' AND t.to_store_id   = ts.id
+      LEFT JOIN shops  tsh ON t.to_type   = 'shop'  AND t.to_shop_id    = tsh.id
+      ${whereSql}
+    `;
+            const countRows = yield (0, db_1.query)(countSql, params);
+            const total = Number((_b = (_a = countRows === null || countRows === void 0 ? void 0 : countRows[0]) === null || _a === void 0 ? void 0 : _a.total) !== null && _b !== void 0 ? _b : 0);
+            // pagination
+            const page = (opts === null || opts === void 0 ? void 0 : opts.page) && opts.page > 0 ? opts.page : 1;
+            const pageSize = (opts === null || opts === void 0 ? void 0 : opts.pageSize) && opts.pageSize > 0 ? opts.pageSize : 25;
+            const offset = (page - 1) * pageSize;
+            // main query with aggregated items JSON
+            const mainSql = `
+      SELECT
+        t.id,
+        t.reference,
+        t.from_type,
+        COALESCE(fs.name, fsh.name) AS from_name,
+        t.to_type,
+        COALESCE(ts.name, tsh.name) AS to_name,
+        t.status,
+        (SELECT COUNT(*) FROM transfer_items ti WHERE ti.transfer_id = t.id) AS item_count,
+        (SELECT COALESCE(SUM(ti.quantity),0) FROM transfer_items ti WHERE ti.transfer_id = t.id) AS total_quantity,
+        IFNULL(items_agg.items, JSON_ARRAY()) AS items,
+        t.created_at
+      FROM transfers t
+      LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_store_id = fs.id
+      LEFT JOIN shops  fsh ON t.from_type = 'shop'  AND t.from_shop_id  = fsh.id
+      LEFT JOIN stores ts ON t.to_type   = 'store' AND t.to_store_id   = ts.id
+      LEFT JOIN shops  tsh ON t.to_type   = 'shop'  AND t.to_shop_id    = tsh.id
+      LEFT JOIN (
+        SELECT
+          ti.transfer_id,
+          JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'product_id', ti.item_id,
+              'quantity', ti.quantity,
+              'name', i.name,
+              'code', i.code,
+              'model', i.model,
+              'price', i.price
+            )
+          ) AS items
+        FROM transfer_items ti
+        JOIN items i ON ti.item_id = i.id
+        GROUP BY ti.transfer_id
+      ) items_agg ON items_agg.transfer_id = t.id
+      ${whereSql}
+      ORDER BY t.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+            // params + pagination values
+            const mainParams = params.concat([pageSize, offset]);
+            const rows = yield (0, db_1.query)(mainSql, mainParams);
+            // parse JSON column if returned as string
+            const items = rows.map((r) => {
+                try {
+                    if (typeof r.items === "string")
+                        r.items = JSON.parse(r.items);
+                }
+                catch (_a) {
+                    r.items = r.items || [];
+                }
+                return r;
+            });
+            return { items, total, page, pageSize };
+        });
+    },
+    getAllTransfers2(opts) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             // build where clauses dynamically

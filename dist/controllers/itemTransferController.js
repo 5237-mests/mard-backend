@@ -35,23 +35,11 @@ exports.itemTransferController = {
                     .json({ message: "Transfer created successfully", id: transferId });
             }
             catch (error) {
-                console.error(error);
                 res.status(500).json({ message: "Server error", error: error.message });
             }
         });
     },
-    getAllTransfers1(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const transfers = yield itemTransferService_1.itemTransferService.getAllTransfers();
-                res.json(transfers);
-            }
-            catch (error) {
-                res.status(500).json({ message: "Server error", error: error.message });
-            }
-        });
-    },
-    getAllTransfers(req, res) {
+    getAllTransfers2(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // parse & validate query params
@@ -67,6 +55,32 @@ exports.itemTransferController = {
                 };
                 const result = yield itemTransferService_1.itemTransferService.getAllTransfers(opts);
                 // result: { items, total }
+                res.json(result);
+            }
+            catch (error) {
+                res.status(500).json({ message: "Server error", error: error.message });
+            }
+        });
+    },
+    getAllTransfers(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // parse & validate query params
+                const { status, fromType, fromDate, toDate, page = "1", pageSize = "25", itemSearch = "", shop_id, store_id, } = req.query;
+                const opts = {
+                    status: typeof status === "string" && status ? status : undefined,
+                    fromType: typeof fromType === "string" && fromType ? fromType : undefined,
+                    fromDate: typeof fromDate === "string" && fromDate ? fromDate : undefined,
+                    toDate: typeof toDate === "string" && toDate ? toDate : undefined,
+                    itemSearch: typeof itemSearch === "string" && itemSearch
+                        ? itemSearch.trim()
+                        : undefined,
+                    shop_id: shop_id !== undefined ? Number(shop_id) || undefined : undefined,
+                    store_id: store_id !== undefined ? Number(store_id) || undefined : undefined,
+                    page: Math.max(1, Number(page) || 1),
+                    pageSize: Math.max(1, Math.min(500, Number(pageSize) || 25)),
+                };
+                const result = yield itemTransferService_1.itemTransferService.getAllTransfers(opts);
                 res.json(result);
             }
             catch (error) {
@@ -112,7 +126,6 @@ exports.itemTransferController = {
                     .json({ message: "Transfer created successfully", id: transferId });
             }
             catch (error) {
-                console.error("transferAllShopItemToStore error:", error);
                 // Propagate not-found errors as 404
                 if (error.message && /not found/i.test(error.message)) {
                     res.status(404).json({ message: error.message });

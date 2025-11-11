@@ -12,6 +12,7 @@ router.post(
   "/create_transfer",
   authenticateToken,
   authorizeUser,
+  authorizeRole(["ADMIN", "STOREKEEPER"]),
   itemTransferController.createTransfer
 );
 router.get(

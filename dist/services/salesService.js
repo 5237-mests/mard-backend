@@ -16,6 +16,15 @@ class SalesService {
         return __awaiter(this, arguments, void 0, function* (shopId, soldById, customerName, customerContact, items, status = "completed", tx_ref) {
             return yield (0, db_1.transaction)((connection) => __awaiter(this, void 0, void 0, function* () {
                 const serialNumbers = new Set();
+                // lets check if the user associated with the sale is a member of the shop
+                // user and shop linked in shop_shopKeeper table
+                const [shopKeeperRows] = yield connection.query("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
+                    shopId,
+                    soldById,
+                ]);
+                if (shopKeeperRows.length === 0) {
+                    throw new Error("User is not a member of the shop");
+                }
                 // 1️⃣ Validate stock and serial numbers
                 for (const item of items) {
                     const [stockRows] = yield connection.query("SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?", [

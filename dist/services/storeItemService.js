@@ -108,6 +108,7 @@ class StoreItemService {
             SELECT 
                 si.quantity,
                 i.id AS id,
+                i.code AS code,
                 i.name AS name,
                 i.model AS model,
                 c.name AS category,
@@ -140,6 +141,7 @@ class StoreItemService {
                 si.quantity,
                 i.id AS item_id,
                 i.name AS item_name,
+                i.code AS item_code,
                 i.model AS item_model,
                 i.price AS item_price
             FROM store_items si
@@ -164,6 +166,7 @@ class StoreItemService {
                 si.quantity,
                 i.id AS item_id,
                 i.name AS item_name,
+                i.code AS item_code,
                 i.model AS item_model,
                 i.price AS item_price
             FROM store_items si
@@ -188,6 +191,7 @@ class StoreItemService {
                 si.quantity,
                 i.id AS item_id,
                 i.name AS item_name,
+                i.code AS item_code,
                 i.model AS item_model,
                 i.price AS item_price
             FROM store_items si

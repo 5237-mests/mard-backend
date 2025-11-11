@@ -17,6 +17,13 @@ class storeItemController {
         return __awaiter(this, void 0, void 0, function* () {
             const { storeId, itemId } = req.params;
             const { quantity } = req.body;
+            //quantity must be >= 1
+            if (quantity < 1) {
+                res
+                    .status(400)
+                    .json({ message: "Quantity must be greater than or equal to 1." });
+                return [];
+            }
             if (!quantity || isNaN(parseInt(quantity, 10))) {
                 res
                     .status(400)

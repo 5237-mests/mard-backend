@@ -101,6 +101,17 @@ export const itemTransferService = {
     items,
     user_id,
   }: CreateTransferInput): Promise<number> {
+    // check user linked with store/shop?
+    const [userRows]: any = await query(
+      fromType === "store"
+        ? "SELECT 1 FROM store_storekeepers WHERE store_id = ? AND user_id = ?"
+        : "SELECT 1 FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?",
+      [fromId, user_id]
+    );
+    if (!userRows || userRows.length === 0) {
+      throw new Error("User not authorized for the source branch");
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
       throw new Error("Transfer must include at least one item");
     }
@@ -230,6 +241,142 @@ export const itemTransferService = {
   },
 
   async getAllTransfers(opts?: {
+    status?: string;
+    fromType?: "store" | "shop" | string;
+    fromDate?: string;
+    toDate?: string;
+    search?: string; // existing general search (reference / branch names)
+    itemSearch?: string; // NEW: search by item name/code/model
+    shop_id?: number; // NEW: filter by shop id (either from or to)
+    store_id?: number; // NEW: filter by store id (either from or to)
+    page?: number;
+    pageSize?: number;
+  }) {
+    // build where clauses dynamically
+    const where: string[] = [];
+    const params: any[] = [];
+
+    if (opts?.status) {
+      where.push("t.status = ?");
+      params.push(opts.status);
+    }
+    if (opts?.fromType) {
+      where.push("t.from_type = ?");
+      params.push(opts.fromType);
+    }
+    if (opts?.fromDate) {
+      where.push("t.created_at >= ?");
+      params.push(`${opts.fromDate} 00:00:00`);
+    }
+    if (opts?.toDate) {
+      where.push("t.created_at <= ?");
+      params.push(`${opts.toDate} 23:59:59`);
+    }
+
+    if (opts?.shop_id !== undefined && opts?.shop_id !== null) {
+      where.push("(t.from_shop_id = ? OR t.to_shop_id = ?)");
+      params.push(opts.shop_id, opts.shop_id);
+    }
+
+    if (opts?.store_id !== undefined && opts?.store_id !== null) {
+      where.push("(t.from_store_id = ? OR t.to_store_id = ?)");
+      params.push(opts.store_id, opts.store_id);
+    }
+
+    // item-level search: include transfers that contain matching items
+    if (opts?.itemSearch) {
+      const s = `%${opts.itemSearch}%`;
+      where.push(
+        `EXISTS (
+           SELECT 1 FROM transfer_items ti
+           JOIN items i ON ti.item_id = i.id
+           WHERE ti.transfer_id = t.id
+             AND (i.name LIKE ? OR i.code LIKE ? OR i.model LIKE ?)
+         )`
+      );
+      params.push(s, s, s);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    // count total matching rows (no aggregation)
+    const countSql = `
+      SELECT COUNT(*) AS total
+      FROM transfers t
+      LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_store_id = fs.id
+      LEFT JOIN shops  fsh ON t.from_type = 'shop'  AND t.from_shop_id  = fsh.id
+      LEFT JOIN stores ts ON t.to_type   = 'store' AND t.to_store_id   = ts.id
+      LEFT JOIN shops  tsh ON t.to_type   = 'shop'  AND t.to_shop_id    = tsh.id
+      ${whereSql}
+    `;
+
+    const countRows: any = await query(countSql, params);
+    const total = Number(countRows?.[0]?.total ?? 0);
+
+    // pagination
+    const page = opts?.page && opts.page > 0 ? opts.page : 1;
+    const pageSize = opts?.pageSize && opts.pageSize > 0 ? opts.pageSize : 25;
+    const offset = (page - 1) * pageSize;
+
+    // main query with aggregated items JSON
+    const mainSql = `
+      SELECT
+        t.id,
+        t.reference,
+        t.from_type,
+        COALESCE(fs.name, fsh.name) AS from_name,
+        t.to_type,
+        COALESCE(ts.name, tsh.name) AS to_name,
+        t.status,
+        (SELECT COUNT(*) FROM transfer_items ti WHERE ti.transfer_id = t.id) AS item_count,
+        (SELECT COALESCE(SUM(ti.quantity),0) FROM transfer_items ti WHERE ti.transfer_id = t.id) AS total_quantity,
+        IFNULL(items_agg.items, JSON_ARRAY()) AS items,
+        t.created_at
+      FROM transfers t
+      LEFT JOIN stores fs ON t.from_type = 'store' AND t.from_store_id = fs.id
+      LEFT JOIN shops  fsh ON t.from_type = 'shop'  AND t.from_shop_id  = fsh.id
+      LEFT JOIN stores ts ON t.to_type   = 'store' AND t.to_store_id   = ts.id
+      LEFT JOIN shops  tsh ON t.to_type   = 'shop'  AND t.to_shop_id    = tsh.id
+      LEFT JOIN (
+        SELECT
+          ti.transfer_id,
+          JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'product_id', ti.item_id,
+              'quantity', ti.quantity,
+              'name', i.name,
+              'code', i.code,
+              'model', i.model,
+              'price', i.price
+            )
+          ) AS items
+        FROM transfer_items ti
+        JOIN items i ON ti.item_id = i.id
+        GROUP BY ti.transfer_id
+      ) items_agg ON items_agg.transfer_id = t.id
+      ${whereSql}
+      ORDER BY t.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    // params + pagination values
+    const mainParams = params.concat([pageSize, offset]);
+    const rows: any = await query(mainSql, mainParams);
+
+    // parse JSON column if returned as string
+    const items = (rows as any[]).map((r) => {
+      try {
+        if (typeof r.items === "string") r.items = JSON.parse(r.items);
+      } catch {
+        r.items = r.items || [];
+      }
+      return r;
+    });
+
+    return { items, total, page, pageSize };
+  },
+
+  async getAllTransfers2(opts?: {
     status?: string;
     fromType?: "store" | "shop" | string;
     fromDate?: string;
