@@ -14,9 +14,11 @@ const salesService_1 = require("../services/salesService");
 class SalesController {
     static createSale(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            const { shopId, soldById, customerName, customerContact, items } = req.body;
-            const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
+            var _a, _b;
+            const { shopId, customerName, customerContact, items } = req.body;
+            // user_id from request
+            const soldById = (_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user.id;
+            const token = (_b = req.headers.authorization) === null || _b === void 0 ? void 0 : _b.split(" ")[1];
             if (!token ||
                 !shopId ||
                 !soldById ||
@@ -30,7 +32,6 @@ class SalesController {
                 res.status(201).json({ saleId, message: "Sale processed successfully" });
             }
             catch (error) {
-                console.error("Error processing sale:", error);
                 res.status(500).json({ error: `Failed to process sale: ${error}` });
             }
         });

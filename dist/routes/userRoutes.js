@@ -9,8 +9,8 @@ const userController_1 = __importDefault(require("../controllers/userController"
 const router = express_1.default.Router();
 const userController = new userController_1.default();
 // Route to get all users
-router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.listAllUsers.bind(userController));
-// Route to get shopekeepers from users
+router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]), userController.listAllUsers.bind(userController));
+// Route to get shopekeepers or storekeeper from users
 router.get("/", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.getShopkeepers.bind(userController));
 // Route to get users by role
 router.get("/:role", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), userController.getUsersByRole.bind(userController));

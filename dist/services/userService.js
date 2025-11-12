@@ -116,7 +116,8 @@ class UserService {
     // get getStorekeepers
     getStorekeepers() {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = "SELECT * FROM users WHERE role = 'STOREKEEPER'";
+            // get only users with role STOREKEEPER and ADMIN
+            const sql = "SELECT * FROM users WHERE role = 'STOREKEEPER' OR role = 'ADMIN'";
             const users = yield (0, db_1.query)(sql);
             return users;
         });

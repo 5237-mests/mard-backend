@@ -9,11 +9,11 @@ const userController = new UserController();
 router.get(
   "/all",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]),
   userController.listAllUsers.bind(userController)
 );
 
-// Route to get shopekeepers from users
+// Route to get shopekeepers or storekeeper from users
 router.get(
   "/",
   authenticateToken,

@@ -4,8 +4,12 @@ import { SaleRequestBody } from "../types/database";
 
 export class SalesController {
   static async createSale(req: Request, res: Response) {
-    const { shopId, soldById, customerName, customerContact, items } =
+    const { shopId, customerName, customerContact, items } =
       req.body as SaleRequestBody;
+
+    // user_id from request
+    const soldById = req?.user?.user.id;
+
     const token = req.headers.authorization?.split(" ")[1];
 
     if (
@@ -29,7 +33,6 @@ export class SalesController {
       );
       res.status(201).json({ saleId, message: "Sale processed successfully" });
     } catch (error) {
-      console.error("Error processing sale:", error);
       res.status(500).json({ error: `Failed to process sale: ${error}` });
     }
   }

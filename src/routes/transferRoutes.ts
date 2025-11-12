@@ -14,7 +14,7 @@ const router = express.Router();
 router.get(
   "/",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "STOREKEEPER"]),
   listTransferRequests
 );
 

@@ -13,6 +13,17 @@ export class SalesService {
   ): Promise<number> {
     return await transaction(async (connection) => {
       const serialNumbers = new Set<string>();
+      // lets check if the user associated with the sale is a member of the shop
+      // user and shop linked in shop_shopKeeper table
+      const [shopKeeperRows] = await connection.query<
+        { id: number }[] & mysql.RowDataPacket[]
+      >("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
+        shopId,
+        soldById,
+      ]);
+      if (shopKeeperRows.length === 0) {
+        throw new Error("User is not a member of the shop");
+      }
 
       // 1️⃣ Validate stock and serial numbers
       for (const item of items) {

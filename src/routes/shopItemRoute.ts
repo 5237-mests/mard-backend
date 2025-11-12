@@ -29,4 +29,7 @@ router.put("/:shopId/items/:itemId", ShopItemController.updateShopItemQuantity);
 // Route to delete a specific item from a specific shop
 router.delete("/:shopId/items/:itemId", ShopItemController.deleteShopItem);
 
+// Route to add multiple items to a shop
+router.post("/:shopId/items", ShopItemController.addMultipleShopItems);
+
 export default router;

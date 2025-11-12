@@ -31,8 +31,8 @@ class UserController {
     }
     getUsersByRole(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            const role = req.params.role;
             try {
-                const { role } = req.query;
                 if (!role) {
                     return res.status(400).json({
                         message: "Invalid role parameter. Only shopkeeper or storekeeper is supported.'",

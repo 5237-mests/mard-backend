@@ -1,6 +1,10 @@
 import express from "express";
 import { SalesController } from "../controllers/salesController";
-import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
+import {
+  authenticateToken,
+  authorizeUser,
+  authorizeRole,
+} from "../middleware/authMiddleware";
 import { SalesPaymentController } from "../controllers/salesPaymentController";
 
 const router = express.Router();
@@ -9,6 +13,7 @@ const router = express.Router();
 router.post(
   "/sales",
   authenticateToken,
+  authorizeUser,
   authorizeRole(["ADMIN", "SHOPKEEPER"]),
   SalesController.createSale
 );
@@ -22,7 +27,7 @@ router.get("/sales", authenticateToken, SalesController.getSales);
 router.get(
   "/sales/all",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]),
   SalesController.getAllSales
 );
 
