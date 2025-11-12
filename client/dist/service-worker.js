@@ -1,11 +1,11 @@
 // Increment this version number when you deploy updates
-const CACHE_VERSION = "v5"; // Change this to v3, v4, etc. with each deployment
+const CACHE_VERSION = "v6"; // Change this to v3, v4, etc. with each deployment
 const CACHE_NAME = `mard-trading-cache-${CACHE_VERSION}`;
 const urlsToCache = ["/", "/index.html"];
 
 // Install new service worker
 self.addEventListener("install", (event) => {
-  console.log("[SW] Installing version:", CACHE_VERSION);
+  // console.log("[SW] Installing version:", CACHE_VERSION);
   // Force immediate activation
   self.skipWaiting();
 
@@ -75,7 +75,7 @@ self.addEventListener("fetch", (event) => {
 
 // Clean up old caches
 self.addEventListener("activate", (event) => {
-  console.log("[SW] Activating version:", CACHE_VERSION);
+  // console.log("[SW] Activating version:", CACHE_VERSION);
   // Take control immediately
   event.waitUntil(
     clients.claim().then(() => {

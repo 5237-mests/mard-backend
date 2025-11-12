@@ -31,4 +31,19 @@ router.post(
   itemRequestController.approveRequest
 );
 
+// remove item from request
+router.delete(
+  "/:id/:item_id",
+  authenticateToken,
+  itemRequestController.removeItemFromRequest
+);
+
+// reject (only ADMIN/STOREKEEPER)
+router.post(
+  "/:id/reject",
+  authenticateToken,
+  authorizeRole(["ADMIN", "STOREKEEPER"]),
+  itemRequestController.rejectRequest
+);
+
 export default router;

@@ -1,12 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-import cors from "cors";
+// import cors from "cors";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import errorHandler from "./lib/errorHandler";
 
-// --- Import routes ---
+// --- Import routes ---.
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import healthRoutes from "./routes/healthRoutes";
@@ -44,11 +44,11 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 
 // --- CORS configuration ---.
-const corsOptions = {
-  origin: "http://localhost:8080",
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: "http://localhost:8080",
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
 
 // --- Static files (Vite build) ---
 const clientBuildPath = path.join(__dirname, "../client/dist");

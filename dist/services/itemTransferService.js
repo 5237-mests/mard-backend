@@ -92,7 +92,7 @@ exports.itemTransferService = {
                     throw new Error(`${toType} (to) not found`);
                 }
                 // validate items exist in items table
-                const itemIds = Array.from(new Set(items.map((it) => Number(it.product_id))));
+                const itemIds = Array.from(new Set(items.map((it) => Number(it.item_id))));
                 const placeholders = itemIds.map(() => "?").join(",");
                 const [existingItems] = yield connection.execute(`SELECT id FROM items WHERE id IN (${placeholders})`, itemIds);
                 const existingSet = new Set(existingItems.map((r) => r.id));
@@ -104,7 +104,7 @@ exports.itemTransferService = {
                 for (const it of items) {
                     const qty = Number(it.quantity);
                     if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) {
-                        throw new Error(`Invalid quantity for product ${it.product_id}`);
+                        throw new Error(`Invalid quantity for product ${it.item_id}`);
                     }
                 }
                 // generate reference and insert transfer
@@ -116,7 +116,7 @@ exports.itemTransferService = {
                 const transferId = insertResult.insertId;
                 // insert transfer_items and update inventories
                 for (const it of items) {
-                    const itemId = Number(it.product_id);
+                    const itemId = Number(it.item_id);
                     const qty = Number(it.quantity);
                     // insert transfer_items row
                     yield connection.execute(`INSERT INTO transfer_items (transfer_id, item_id, quantity)
@@ -237,7 +237,7 @@ exports.itemTransferService = {
           ti.transfer_id,
           JSON_ARRAYAGG(
             JSON_OBJECT(
-              'product_id', ti.item_id,
+              'item_id', ti.item_id,
               'quantity', ti.quantity,
               'name', i.name,
               'code', i.code,
@@ -339,7 +339,7 @@ exports.itemTransferService = {
           ti.transfer_id,
           JSON_ARRAYAGG(
             JSON_OBJECT(
-              'product_id', ti.item_id,
+              'item_id', ti.item_id,
               'quantity', ti.quantity,
               'name', i.name,
               'code', i.code,
@@ -392,7 +392,7 @@ exports.itemTransferService = {
             if (!transfers.length)
                 throw new Error("Transfer not found");
             const items = yield (0, db_1.query)(`SELECT 
-         ti.item_id AS product_id,
+         ti.item_id AS item_id,
          ti.quantity,
          i.name AS product_name,
          i.code AS product_code,

@@ -69,14 +69,45 @@ export const itemRequestController = {
 
   async updateRequest(req: Request, res: Response) {
     try {
-      const user_id = Number((req as any).user?.id ?? 0);
+      const user_id = Number((req as any).user?.user?.id ?? 0);
       if (!user_id) return res.status(401).json({ message: "Auth required" });
       const id = Number(req.params.id);
       const patch = req.body;
-      await itemRequestService.updateRequest(id, user_id, patch);
+      const result = await itemRequestService.updateRequest(id, user_id, {
+        items: patch,
+        status: "approved",
+      });
+      // console.log("Result: ", result);
       res.json({ message: "Updated" });
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Cannot update" });
+    }
+  },
+
+  // remove item from item request
+  async removeItemFromRequest(req: Request, res: Response) {
+    try {
+      const user_id = req.user?.user?.id;
+      if (!user_id) return res.status(401).json({ message: "Auth required" });
+      const id = Number(req.params.id);
+      const item_id = Number(req.params.item_id);
+      await itemRequestService.removeRequestItem(id, item_id);
+      res.json({ message: "Removed" });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Cannot remove" });
+    }
+  },
+
+  // reject item request
+  async rejectRequest(req: Request, res: Response) {
+    try {
+      const user_id = req.user?.user?.id;
+      if (!user_id) return res.status(401).json({ message: "Auth required" });
+      const id = Number(req.params.id);
+      await itemRequestService.rejectRequest(id, user_id);
+      res.json({ message: "Rejected" });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Cannot reject" });
     }
   },
 };

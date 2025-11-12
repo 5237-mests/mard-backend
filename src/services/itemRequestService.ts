@@ -80,17 +80,18 @@ export const itemRequestService = {
     const offset = (page - 1) * pageSize;
 
     const rows: any = await query(
-      `SELECT r.*, s.name AS shop_name, st.name AS store_name, u.name AS created_by_name
+      `SELECT r.*, s.name AS shop_name, st.name AS store_name, u.name AS created_by, a.name AS approved_by
        FROM item_requests r
        LEFT JOIN shops s ON r.shop_id = s.id
        LEFT JOIN stores st ON r.store_id = st.id
        LEFT JOIN users u ON r.created_by_id = u.id
+       LEFT JOIN users a ON r.approved_by_id = a.id
        ${whereSql}
        ORDER BY r.created_at DESC
        LIMIT ? OFFSET ?`,
       params.concat([pageSize, offset])
     );
-    // fetch items for these requests
+    // fetch items for these .
     const ids = (rows as any[]).map((r) => r.id);
     let itemsMap: Record<number, any[]> = {};
     if (ids.length) {
@@ -109,23 +110,24 @@ export const itemRequestService = {
       }
     }
     return {
-      items: (rows as any[]).map((r) => ({
+      data: (rows as any[]).map((r) => ({
         ...r,
         request_items: itemsMap[r.id] ?? [],
       })),
       page,
       pageSize,
-      total: 0, // you can add count sql if needed
+      total: rows.length < pageSize ? offset + rows.length : undefined,
     };
   },
 
   async getRequestById(id: number) {
     const [rows]: any = await query(
-      `SELECT r.*, s.name AS shop_name, st.name AS store_name, u.name AS created_by_name
+      `SELECT r.*, s.name AS shop_name, st.name AS store_name, u.name AS created_by, a.name AS approved_by
        FROM item_requests r
        LEFT JOIN shops s ON r.shop_id = s.id
        LEFT JOIN stores st ON r.store_id = st.id
        LEFT JOIN users u ON r.created_by_id = u.id
+       LEFT JOIN users a ON r.approved_by_id = a.id
        WHERE r.id = ?`,
       [id]
     );
@@ -185,47 +187,107 @@ export const itemRequestService = {
     });
   },
 
+  // Edit request items (only pending)
   async updateRequest(
     requestId: number,
     updaterId: number,
     patch: { items?: RequestItemInput[]; status?: string }
   ) {
     return await transaction(async (conn) => {
+      // 1. Verify the request exists
       const [rrows]: any = await conn.execute(
         `SELECT * FROM item_requests WHERE id = ?`,
         [requestId]
       );
       if (!rrows || rrows.length === 0) throw new Error("Request not found");
       const r = rrows[0];
+      // 2. Only allow edits on pending requests
       if (r.status !== "pending")
         throw new Error("Only pending requests can be edited");
-
-      if (patch.items) {
-        // replace items
-        await conn.execute(
-          `DELETE FROM item_request_items WHERE request_id = ?`,
-          [requestId]
-        );
-        const vals: string[] = [];
-        const params: any[] = [];
+      // 3. Update individual item fields if provided
+      if (patch.items && patch.items.length > 0) {
         for (const it of patch.items) {
-          vals.push("(?, ?, ?, ?)");
-          params.push(requestId, it.item_id, it.quantity, it.note || null);
+          const updates: string[] = [];
+          const params: any[] = [];
+
+          if (it.quantity !== undefined) {
+            updates.push("quantity = ?");
+            params.push(it.quantity);
+          }
+          if (it.note !== undefined) {
+            updates.push("note = ?");
+            params.push(it.note);
+          }
+
+          // only execute if there are fields to update
+          if (updates.length > 0) {
+            params.push(requestId, it.item_id);
+            await conn.execute(
+              `UPDATE item_request_items 
+             SET ${updates.join(", ")} 
+             WHERE request_id = ? AND item_id = ?`,
+              params
+            );
+          }
         }
-        await conn.execute(
-          `INSERT INTO item_request_items (request_id, item_id, quantity, note) VALUES ${vals.join(
-            ","
-          )}`,
-          params
-        );
       }
 
-      if (patch.status) {
-        await conn.execute(`UPDATE item_requests SET status = ? WHERE id = ?`, [
-          patch.status,
-          requestId,
-        ]);
-      }
+      // 4. Optional: Update status if provided
+      // if (patch.status) {
+      //   await conn.execute(
+      //     `UPDATE item_requests
+      //    SET status = ?, updated_by_id = ?, updated_at = NOW()
+      //    WHERE id = ?`,
+      //     [patch.status, updaterId, requestId]
+      //   );
+      // } else {
+      //   // Always update metadata on
+      //   await conn.execute(
+      //     `UPDATE item_requests
+      //    SET approved_by_id = ?
+      //    WHERE id = ?`,
+      //     [updaterId, requestId]
+      //   );
+      // }
+
+      return true;
+    });
+  },
+
+  // remove item from item request
+  async removeRequestItem(requestId: number, itemId: number) {
+    return await transaction(async (conn) => {
+      const [rrows]: any = await conn.execute(
+        `SELECT * FROM item_requests WHERE id = ? FOR UPDATE`,
+        [requestId]
+      );
+      if (!rrows || rrows.length === 0) throw new Error("Request not found");
+      const r = rrows[0];
+      if (r.status !== "pending")
+        throw new Error("Only pending requests can be edited");
+      await conn.execute(
+        `DELETE FROM item_request_items WHERE request_id = ? AND item_id = ?`,
+        [requestId, itemId]
+      );
+      return true;
+    });
+  },
+
+  // Reject request
+  async rejectRequest(requestId: number, approverId: number) {
+    return await transaction(async (conn) => {
+      const [rrows]: any = await conn.execute(
+        `SELECT * FROM item_requests WHERE id = ? FOR UPDATE`,
+        [requestId]
+      );
+      if (!rrows || rrows.length === 0) throw new Error("Request not found");
+      const r = rrows[0];
+      if (r.status !== "pending")
+        throw new Error("Only pending requests can be rejected");
+      await conn.execute(
+        `UPDATE item_requests SET status = ?, approved_by_id = ? WHERE id = ?`,
+        ["rejected", approverId, requestId]
+      );
       return true;
     });
   },

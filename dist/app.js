@@ -10,7 +10,7 @@ const path_1 = __importDefault(require("path"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
-// --- Import routes ---
+// --- Import routes ---.
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
@@ -36,13 +36,14 @@ const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const itemTransferRoutes_1 = __importDefault(require("./routes/itemTransferRoutes"));
 const deadstockRoutes_1 = __importDefault(require("./routes/deadstockRoutes"));
 const storeReceiveRoutes_1 = __importDefault(require("./routes/storeReceiveRoutes"));
+const itemRequestRoutes_1 = __importDefault(require("./routes/itemRequestRoutes"));
 dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
 // --- Middleware ---
 app.use(express_1.default.json());
-// --- CORS configuration ---
+// --- CORS configuration ---.
 // const corsOptions = {
 //   origin: "http://localhost:8080",
 //   credentials: true,
@@ -107,7 +108,8 @@ app.use("/api/payment", paymentRoutes_1.default);
 app.use("/api/item-transfers", itemTransferRoutes_1.default);
 app.use("/api/deadstock", deadstockRoutes_1.default);
 app.use("/api/store-receives", storeReceiveRoutes_1.default);
-// --- Catch-all route for React SPA ---.
+app.use("/api/item-requests", itemRequestRoutes_1.default);
+// --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));
 });
