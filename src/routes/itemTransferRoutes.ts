@@ -21,7 +21,7 @@ router.get(
   authorizeRole(["ADMIN", "STOREKEEPER"]),
   itemTransferController.getAllTransfers
 );
-router.get("/:id", itemTransferController.getTransferById);
+router.get("/:id", authenticateToken, itemTransferController.getTransferById);
 
 // transfer all item from shop to store.
 router.post(

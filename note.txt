@@ -1,0 +1,39 @@
+*******
+    Check at the backend if the shopkeeper-to-shop, or storekeeper-to-storekeeper relation before any action(CRUD)
+
+********
+    Receiving role for store Loader (RECEIVER)
+
+********
+    Stock and restock history
+
+
+
+I want to create a service `storeReceiveService.ts` for managing store receiving in my multi-store inventory system. 
+I already have a `StoreItemService` that handles adding/updating store items quantity. 
+The new service should handle the following:
+
+1. **Roles:** RECEIVER creates and edits pending receives. STOREKEEPER approves or rejects receives.
+2. **Tables:** 
+   - `store_receives` (id, store_id, reference_no, status ENUM('pending','approved','rejected'), created_by_id, approved_by_id, created_at, approved_at)
+   - `store_receive_items` (id, receive_id, item_id, quantity, cost_price, note)
+3. **Flow:**
+   - RECEIVER creates a receive (status='pending')
+   - RECEIVER adds multiple items to the receive
+   - RECEIVER can edit receive or its items before approval
+   - STOREKEEPER approves the receive → increase store_items quantity using `StoreItemService.addMultiplestoreItems` 
+   - STOREKEEPER can reject the receive → status='rejected', inventory unchanged
+4. **Transactions:** Ensure database operations are transactional where needed.
+5. **Validation:** 
+   - Check store exists
+   - Check item exists
+   - Quantity must be positive integer
+   - Cannot approve empty receive
+6. **Return values:** 
+   - For createReceive → return receive id
+   - For getReceiveById → return receive + items + user info
+   - For approveReceive → return true/false
+7. **Additional features:** 
+   - Filtering receives by status, store, date range
+   - Pagination for listing receives
+   - Editing pending receives only

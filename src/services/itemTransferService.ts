@@ -1,7 +1,7 @@
 import { query, transaction } from "../config/db";
 
 export interface TransferItem {
-  product_id: number;
+  item_id: number;
   quantity: number;
 }
 
@@ -140,7 +140,7 @@ export const itemTransferService = {
 
       // validate items exist in items table
       const itemIds = Array.from(
-        new Set(items.map((it) => Number(it.product_id)))
+        new Set(items.map((it) => Number(it.item_id)))
       );
       const placeholders = itemIds.map(() => "?").join(",");
       const [existingItems]: any = await connection.execute(
@@ -157,7 +157,7 @@ export const itemTransferService = {
       for (const it of items) {
         const qty = Number(it.quantity);
         if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) {
-          throw new Error(`Invalid quantity for product ${it.product_id}`);
+          throw new Error(`Invalid quantity for product ${it.item_id}`);
         }
       }
 
@@ -174,7 +174,7 @@ export const itemTransferService = {
 
       // insert transfer_items and update inventories
       for (const it of items) {
-        const itemId = Number(it.product_id);
+        const itemId = Number(it.item_id);
         const qty = Number(it.quantity);
 
         // insert transfer_items row
@@ -342,7 +342,7 @@ export const itemTransferService = {
           ti.transfer_id,
           JSON_ARRAYAGG(
             JSON_OBJECT(
-              'product_id', ti.item_id,
+              'item_id', ti.item_id,
               'quantity', ti.quantity,
               'name', i.name,
               'code', i.code,
@@ -458,7 +458,7 @@ export const itemTransferService = {
           ti.transfer_id,
           JSON_ARRAYAGG(
             JSON_OBJECT(
-              'product_id', ti.item_id,
+              'item_id', ti.item_id,
               'quantity', ti.quantity,
               'name', i.name,
               'code', i.code,
@@ -516,7 +516,7 @@ export const itemTransferService = {
 
     const items = await query(
       `SELECT 
-         ti.item_id AS product_id,
+         ti.item_id AS item_id,
          ti.quantity,
          i.name AS product_name,
          i.code AS product_code,
