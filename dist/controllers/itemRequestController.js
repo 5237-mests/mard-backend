@@ -11,24 +11,31 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.itemRequestController = void 0;
 const itemRequestService_1 = require("../services/itemRequestService");
+// Expect authenticated req.user to exist; use your auth middleware
 exports.itemRequestController = {
+    // POST /api/item-requests
     createRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             try {
-                const user_id = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id;
+                const user_id = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user.id) !== null && _b !== void 0 ? _b : 0);
                 if (!user_id)
                     return res.status(401).json({ message: "Auth required" });
-                const { shop_id, store_id, items } = req.body;
-                if (!shop_id ||
-                    !store_id ||
-                    !Array.isArray(items) ||
-                    items.length === 0) {
-                    return res.status(400).json({ message: "Invalid payload." });
-                }
+                // payload expected:
+                // { items: [{ item_id, quantity }...], notes, source_type, source_id, destination_type, destination_id }
+                const { items, notes, source_type, source_id, destination_type, destination_id, } = req.body;
+                if (!Array.isArray(items) || items.length === 0)
+                    return res.status(400).json({ message: "items required" });
+                if (!source_type || !destination_type)
+                    return res
+                        .status(400)
+                        .json({ message: "source and destination required" });
                 const result = yield itemRequestService_1.itemRequestService.createRequest({
-                    shop_id: Number(shop_id),
-                    store_id: Number(store_id),
+                    source_type,
+                    source_id: Number(source_id),
+                    destination_type,
+                    destination_id: Number(destination_id),
+                    notes: notes !== null && notes !== void 0 ? notes : null,
                     items,
                     created_by: user_id,
                 });
@@ -39,17 +46,24 @@ exports.itemRequestController = {
             }
         });
     },
+    // GET /api/item-requests?status=...&source_type=...&source_id=...&page=...
     listRequests(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { status, shop_id, store_id, page, pageSize, search } = req.query;
+                const { status, source_type, source_id, destination_type, destination_id, page = "1", pageSize = "25", search, } = req.query;
                 const opts = {
-                    status: typeof status === "string" ? status : undefined,
-                    shop_id: shop_id ? Number(shop_id) : undefined,
-                    store_id: store_id ? Number(store_id) : undefined,
-                    page: page ? Number(page) : 1,
-                    pageSize: pageSize ? Number(pageSize) : 25,
-                    search: typeof search === "string" ? search : undefined,
+                    status: typeof status === "string" && status ? status : undefined,
+                    source_type: typeof source_type === "string" && source_type
+                        ? source_type
+                        : undefined,
+                    source_id: source_id ? Number(source_id) : undefined,
+                    destination_type: typeof destination_type === "string" && destination_type
+                        ? destination_type
+                        : undefined,
+                    destination_id: destination_id ? Number(destination_id) : undefined,
+                    page: Math.max(1, Number(page) || 1),
+                    pageSize: Math.max(1, Number(pageSize) || 25),
+                    search: typeof search === "string" && search ? search.trim() : undefined,
                 };
                 const data = yield itemRequestService_1.itemRequestService.getRequests(opts);
                 res.json(data);
@@ -59,6 +73,7 @@ exports.itemRequestController = {
             }
         });
     },
+    // GET /api/item-requests/:id
     getRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -71,49 +86,69 @@ exports.itemRequestController = {
             }
         });
     },
-    approveRequest(req, res) {
+    // PATCH /api/item-requests/:id  -- update top-level fields (notes, status, destination)
+    updateRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             try {
-                const user_id = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id;
+                const user_id = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user.id) !== null && _b !== void 0 ? _b : 0);
                 if (!user_id)
                     return res.status(401).json({ message: "Auth required" });
                 const id = Number(req.params.id);
-                const result = yield itemRequestService_1.itemRequestService.approveRequest(id, user_id);
-                res.json({ message: "Approved", transferId: result.transferId });
-            }
-            catch (err) {
-                res.status(400).json({ message: err.message || "Cannot approve" });
-            }
-        });
-    },
-    updateRequest(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c;
-            try {
-                const user_id = Number((_c = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : 0);
-                if (!user_id)
-                    return res.status(401).json({ message: "Auth required" });
-                const id = Number(req.params.id);
-                const patch = req.body;
-                const result = yield itemRequestService_1.itemRequestService.updateRequest(id, user_id, {
-                    items: patch,
-                    status: "approved",
-                });
-                // console.log("Result: ", result);
-                res.json({ message: "Updated" });
+                const patch = req.body; // allow notes, destination_type/id, status (but service validates)
+                const out = yield itemRequestService_1.itemRequestService.updateRequest(id, user_id, patch);
+                res.json(out);
             }
             catch (err) {
                 res.status(400).json({ message: err.message || "Cannot update" });
             }
         });
     },
-    // remove item from item request
+    // PATCH /api/item-requests/:id/items  -- update only provided items (quantity/note). body: { items: [{ item_id, quantity, note? }] }
+    updateItems(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            try {
+                const user_id = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user.id) !== null && _b !== void 0 ? _b : 0);
+                if (!user_id)
+                    return res.status(401).json({ message: "Auth required" });
+                const id = Number(req.params.id);
+                const items = (_c = req.body) === null || _c === void 0 ? void 0 : _c.items;
+                if (!Array.isArray(items) || items.length === 0)
+                    return res.status(400).json({ message: "No items provided" });
+                const updated = yield itemRequestService_1.itemRequestService.updateRequestItems(id, user_id, items);
+                res.json({ message: "Items updated", updatedCount: updated });
+            }
+            catch (err) {
+                res
+                    .status(400)
+                    .json({ message: err.message || "Could not update items" });
+            }
+        });
+    },
+    // POST /api/item-requests/:id/approve  -- only ADMIN/STOREKEEPER; will create transfer and mark request approved
+    approveRequest(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            try {
+                const user_id = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user.id) !== null && _b !== void 0 ? _b : 0);
+                if (!user_id)
+                    return res.status(401).json({ message: "Auth required" });
+                const id = Number(req.params.id);
+                const out = yield itemRequestService_1.itemRequestService.approveRequest(id, user_id);
+                res.json({ message: "Approved", transferId: (_c = out.transferId) !== null && _c !== void 0 ? _c : null });
+            }
+            catch (err) {
+                res.status(400).json({ message: err.message || "Cannot approve" });
+            }
+        });
+    },
+    // DELETE /api/item-requests/:id/items/:item_id
     removeItemFromRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             try {
-                const user_id = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id;
+                const user_id = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user.id) !== null && _b !== void 0 ? _b : 0);
                 if (!user_id)
                     return res.status(401).json({ message: "Auth required" });
                 const id = Number(req.params.id);
@@ -126,12 +161,12 @@ exports.itemRequestController = {
             }
         });
     },
-    // reject item request
+    // POST /api/item-requests/:id/reject
     rejectRequest(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             try {
-                const user_id = (_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id;
+                const user_id = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user.id) !== null && _b !== void 0 ? _b : 0);
                 if (!user_id)
                     return res.status(401).json({ message: "Auth required" });
                 const id = Number(req.params.id);
