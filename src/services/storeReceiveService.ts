@@ -1,5 +1,6 @@
 import { query, transaction } from "../config/db";
 import { StoreItemService } from "./storeItemService";
+import { inventoryAuditService } from "./inventoryAuditService";
 
 /**
  * Service to manage store receives (receiving shipments into a store).
@@ -362,7 +363,6 @@ export const storeReceiveService = {
       if (!items.length) throw new Error("Cannot approve empty receive");
 
       // prepare bulk upsert to store_items within the transaction
-      // build queries similar to StoreItemService.addMultiplestoreItems but using conn.execute
       const valuePlaceholders: string[] = [];
       const params: any[] = [];
       for (const it of items) {
@@ -383,6 +383,20 @@ export const storeReceiveService = {
         `UPDATE store_receives SET status = 'approved', approved_by_id = ?, approved_at = NOW() WHERE id = ?`,
         [approvedById, receiveId]
       );
+
+      // --- AUDIT: create audit records for each item received ---
+      for (const it of items) {
+        await inventoryAuditService.createAudit({
+          location_type: "store",
+          location_id: receive.store_id,
+          item_id: it.item_id,
+          txn_type: "receive",
+          quantity_in: it.quantity,
+          reference_id: receiveId,
+          reference_table: "store_receives",
+          note: "Store receive approved",
+        });
+      }
 
       return true;
     });

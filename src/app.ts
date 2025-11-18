@@ -6,7 +6,7 @@ import connectDB from "./config/db";
 import logger from "./config/logger";
 import errorHandler from "./lib/errorHandler";
 
-// --- Import routes ---.
+// --- Import routes ---
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import healthRoutes from "./routes/healthRoutes";
@@ -33,6 +33,7 @@ import itemTransferRoutes from "./routes/itemTransferRoutes";
 import deadstockRoutes from "./routes/deadstockRoutes";
 import storeReceiveRoutes from "./routes/storeReceiveRoutes";
 import itemRequestRoutes from "./routes/itemRequestRoutes";
+import inventoryAuditRoutes from "./routes/inventoryAuditRoutes";
 
 dotenv.config();
 connectDB();
@@ -84,7 +85,7 @@ app.use(
   })
 );
 
-// --- Serve uploads ---.
+// --- Serve uploads ---
 app.use(
   "/uploads",
   express.static(
@@ -119,6 +120,7 @@ app.use("/api/item-transfers", itemTransferRoutes);
 app.use("/api/deadstock", deadstockRoutes);
 app.use("/api/store-receives", storeReceiveRoutes);
 app.use("/api/item-requests", itemRequestRoutes);
+app.use("/api/inventory-audits", inventoryAuditRoutes);
 
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {

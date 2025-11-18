@@ -11,13 +11,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesService = void 0;
 const db_1 = require("../config/db");
+const inventoryAuditService_1 = require("./inventoryAuditService"); // Import the audit service
 class SalesService {
     static processSale(shopId_1, soldById_1, customerName_1, customerContact_1, items_1) {
         return __awaiter(this, arguments, void 0, function* (shopId, soldById, customerName, customerContact, items, status = "completed", tx_ref) {
             return yield (0, db_1.transaction)((connection) => __awaiter(this, void 0, void 0, function* () {
                 const serialNumbers = new Set();
-                // lets check if the user associated with the sale is a member of the shop
-                // user and shop linked in shop_shopKeeper table
+                // Validate shop and user association
                 const [shopKeeperRows] = yield connection.query("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
                     shopId,
                     soldById,
@@ -76,10 +76,22 @@ class SalesService {
                         item.serialNumber || null,
                     ]);
                 }
-                // 5️⃣ Only update stock when status is 'completed'
+                // 5️⃣ Only update stock and create audit when status is 'completed'
                 if (status === "completed") {
                     for (const item of items) {
+                        // Update stock
                         yield connection.query("UPDATE shop_items SET quantity = quantity - ? WHERE shop_id = ? AND item_id = ?", [item.quantitySold, shopId, item.itemId]);
+                        // Create audit record
+                        yield inventoryAuditService_1.inventoryAuditService.createAudit({
+                            location_type: "shop",
+                            location_id: Number(shopId),
+                            item_id: item.itemId,
+                            txn_type: "sale",
+                            quantity_out: item.quantitySold,
+                            reference_id: saleId,
+                            reference_table: "sales",
+                            note: `Sale transaction`,
+                        });
                     }
                 }
                 return saleId;

@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.itemTransferService = void 0;
 const db_1 = require("../config/db");
+const inventoryAuditService_1 = require("./inventoryAuditService"); // Add this import
 exports.itemTransferService = {
     // Transfer all items from shop back to store
     // remove everything in shop and add to store
@@ -150,6 +151,29 @@ exports.itemTransferService = {
              VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`, [toId, itemId, qty]);
                     }
+                    // --- AUDIT: create audit records for both source and destination ---
+                    // Source: transfer_out
+                    yield inventoryAuditService_1.inventoryAuditService.createAudit({
+                        location_type: fromType,
+                        location_id: fromId,
+                        item_id: itemId,
+                        txn_type: "transfer_out",
+                        quantity_out: qty,
+                        reference_id: transferId,
+                        reference_table: "transfers",
+                        note: `Transfer out to ${toType} ${toId}`,
+                    });
+                    // Destination: transfer_in
+                    yield inventoryAuditService_1.inventoryAuditService.createAudit({
+                        location_type: toType,
+                        location_id: toId,
+                        item_id: itemId,
+                        txn_type: "transfer_in",
+                        quantity_in: qty,
+                        reference_id: transferId,
+                        reference_table: "transfers",
+                        note: `Transfer in from ${fromType} ${fromId}`,
+                    });
                 }
                 return transferId;
             }));

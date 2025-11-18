@@ -10,7 +10,7 @@ const path_1 = __importDefault(require("path"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
-// --- Import routes ---.
+// --- Import routes ---
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
@@ -37,6 +37,7 @@ const itemTransferRoutes_1 = __importDefault(require("./routes/itemTransferRoute
 const deadstockRoutes_1 = __importDefault(require("./routes/deadstockRoutes"));
 const storeReceiveRoutes_1 = __importDefault(require("./routes/storeReceiveRoutes"));
 const itemRequestRoutes_1 = __importDefault(require("./routes/itemRequestRoutes"));
+const inventoryAuditRoutes_1 = __importDefault(require("./routes/inventoryAuditRoutes"));
 dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
@@ -80,7 +81,7 @@ app.use(express_1.default.static(clientBuildPath, {
         }
     },
 }));
-// --- Serve uploads ---.
+// --- Serve uploads ---
 app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
 // --- API Routes ---
 app.use("/api/auth", authRoutes_1.default);
@@ -109,6 +110,7 @@ app.use("/api/item-transfers", itemTransferRoutes_1.default);
 app.use("/api/deadstock", deadstockRoutes_1.default);
 app.use("/api/store-receives", storeReceiveRoutes_1.default);
 app.use("/api/item-requests", itemRequestRoutes_1.default);
+app.use("/api/inventory-audits", inventoryAuditRoutes_1.default);
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));

@@ -1,4 +1,5 @@
 import { query, transaction } from "../config/db";
+import { inventoryAuditService } from "./inventoryAuditService"; // Add this import
 
 export interface TransferItem {
   item_id: number;
@@ -234,6 +235,31 @@ export const itemTransferService = {
             [toId, itemId, qty]
           );
         }
+
+        // --- AUDIT: create audit records for both source and destination ---
+        // Source: transfer_out
+        await inventoryAuditService.createAudit({
+          location_type: fromType,
+          location_id: fromId,
+          item_id: itemId,
+          txn_type: "transfer_out",
+          quantity_out: qty,
+          reference_id: transferId,
+          reference_table: "transfers",
+          note: `Transfer out to ${toType} ${toId}`,
+        });
+
+        // Destination: transfer_in
+        await inventoryAuditService.createAudit({
+          location_type: toType,
+          location_id: toId,
+          item_id: itemId,
+          txn_type: "transfer_in",
+          quantity_in: qty,
+          reference_id: transferId,
+          reference_table: "transfers",
+          note: `Transfer in from ${fromType} ${fromId}`,
+        });
       }
 
       return transferId;

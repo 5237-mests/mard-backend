@@ -1,4 +1,5 @@
 import { query, transaction } from "../config/db";
+import { inventoryAuditService } from "./inventoryAuditService"; // Add this import
 
 /**
  * Minimal types used by service.
@@ -74,7 +75,21 @@ export const deadstockService = {
         ]
       );
 
-      return ins.insertId;
+      const deadstockId = ins.insertId;
+
+      // --- AUDIT: create audit record for deadstock (stock lost) ---
+      await inventoryAuditService.createAudit({
+        location_type: input.sourceType,
+        location_id: input.sourceId,
+        item_id: input.item_id,
+        txn_type: "wastage",
+        quantity_out: qty,
+        reference_id: deadstockId,
+        reference_table: "deadstock",
+        note: input.notes || input.reason || "Deadstock reported",
+      });
+
+      return deadstockId;
     });
   },
 
@@ -196,7 +211,39 @@ export const deadstockService = {
             [rec.quantity, rec.source_shop_id, rec.item_id]
           );
         }
+
+        // --- AUDIT: create audit record for resolved deadstock (stock returned) ---
+        await inventoryAuditService.createAudit({
+          location_type: rec.source_type,
+          location_id:
+            rec.source_type === "store"
+              ? rec.source_store_id
+              : rec.source_shop_id,
+          item_id: rec.item_id,
+          txn_type: "receive",
+          quantity_in: rec.quantity,
+          reference_id: id,
+          reference_table: "deadstock",
+          note: "Deadstock resolved, stock returned",
+        });
       }
+
+      // if (action === "discarded") {
+      //   // --- AUDIT: create audit record for discarded deadstock (stock lost) ---
+      //   await inventoryAuditService.createAudit({
+      //     location_type: rec.source_type,
+      //     location_id:
+      //       rec.source_type === "store"
+      //         ? rec.source_store_id
+      //         : rec.source_shop_id,
+      //     item_id: rec.item_id,
+      //     txn_type: "wastage",
+      //     quantity_out: rec.quantity,
+      //     reference_id: id,
+      //     reference_table: "deadstock",
+      //     note: "Deadstock discarded, stock lost",
+      //   });
+      // }
 
       await conn.execute(
         `UPDATE deadstock 

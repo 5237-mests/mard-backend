@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deadstockService = void 0;
 const db_1 = require("../config/db");
+const inventoryAuditService_1 = require("./inventoryAuditService"); // Add this import
 exports.deadstockService = {
     reportDeadstock(input) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -54,7 +55,19 @@ exports.deadstockService = {
                     input.notes || null,
                     input.user_id || null,
                 ]);
-                return ins.insertId;
+                const deadstockId = ins.insertId;
+                // --- AUDIT: create audit record for deadstock (stock lost) ---
+                yield inventoryAuditService_1.inventoryAuditService.createAudit({
+                    location_type: input.sourceType,
+                    location_id: input.sourceId,
+                    item_id: input.item_id,
+                    txn_type: "wastage",
+                    quantity_out: qty,
+                    reference_id: deadstockId,
+                    reference_table: "deadstock",
+                    note: input.notes || input.reason || "Deadstock reported",
+                });
+                return deadstockId;
             }));
         });
     },
@@ -148,7 +161,36 @@ exports.deadstockService = {
                     else {
                         yield conn.execute("UPDATE shop_items SET quantity = quantity + ? WHERE shop_id = ? AND item_id = ?", [rec.quantity, rec.source_shop_id, rec.item_id]);
                     }
+                    // --- AUDIT: create audit record for resolved deadstock (stock returned) ---
+                    yield inventoryAuditService_1.inventoryAuditService.createAudit({
+                        location_type: rec.source_type,
+                        location_id: rec.source_type === "store"
+                            ? rec.source_store_id
+                            : rec.source_shop_id,
+                        item_id: rec.item_id,
+                        txn_type: "receive",
+                        quantity_in: rec.quantity,
+                        reference_id: id,
+                        reference_table: "deadstock",
+                        note: "Deadstock resolved, stock returned",
+                    });
                 }
+                // if (action === "discarded") {
+                //   // --- AUDIT: create audit record for discarded deadstock (stock lost) ---
+                //   await inventoryAuditService.createAudit({
+                //     location_type: rec.source_type,
+                //     location_id:
+                //       rec.source_type === "store"
+                //         ? rec.source_store_id
+                //         : rec.source_shop_id,
+                //     item_id: rec.item_id,
+                //     txn_type: "wastage",
+                //     quantity_out: rec.quantity,
+                //     reference_id: id,
+                //     reference_table: "deadstock",
+                //     note: "Deadstock discarded, stock lost",
+                //   });
+                // }
                 yield conn.execute(`UPDATE deadstock 
        SET status = ?, resolved_at = NOW(), notes = COALESCE(notes, ?)
        WHERE id = ?`, [action, notes || null, id]);

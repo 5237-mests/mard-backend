@@ -1,6 +1,8 @@
 import { query, transaction } from "../config/db";
 import { SaleItemInput, ShopItem, Sale } from "../types/database";
 import mysql from "mysql2/promise";
+import { inventoryAuditService } from "./inventoryAuditService"; // Import the audit service
+
 export class SalesService {
   static async processSale(
     shopId: string,
@@ -13,8 +15,7 @@ export class SalesService {
   ): Promise<number> {
     return await transaction(async (connection) => {
       const serialNumbers = new Set<string>();
-      // lets check if the user associated with the sale is a member of the shop
-      // user and shop linked in shop_shopKeeper table
+      // Validate shop and user association
       const [shopKeeperRows] = await connection.query<
         { id: number }[] & mysql.RowDataPacket[]
       >("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
@@ -99,13 +100,26 @@ export class SalesService {
         );
       }
 
-      // 5️⃣ Only update stock when status is 'completed'
+      // 5️⃣ Only update stock and create audit when status is 'completed'
       if (status === "completed") {
         for (const item of items) {
+          // Update stock
           await connection.query(
             "UPDATE shop_items SET quantity = quantity - ? WHERE shop_id = ? AND item_id = ?",
             [item.quantitySold, shopId, item.itemId]
           );
+
+          // Create audit record
+          await inventoryAuditService.createAudit({
+            location_type: "shop",
+            location_id: Number(shopId),
+            item_id: item.itemId,
+            txn_type: "sale",
+            quantity_out: item.quantitySold,
+            reference_id: saleId,
+            reference_table: "sales",
+            note: `Sale transaction`,
+          });
         }
       }
 

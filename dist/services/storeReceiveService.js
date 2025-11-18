@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.storeReceiveService = void 0;
 const db_1 = require("../config/db");
+const inventoryAuditService_1 = require("./inventoryAuditService");
 /**
  * Service to manage store receives (receiving shipments into a store).
  *
@@ -293,7 +294,6 @@ exports.storeReceiveService = {
                 if (!items.length)
                     throw new Error("Cannot approve empty receive");
                 // prepare bulk upsert to store_items within the transaction
-                // build queries similar to StoreItemService.addMultiplestoreItems but using conn.execute
                 const valuePlaceholders = [];
                 const params = [];
                 for (const it of items) {
@@ -309,6 +309,19 @@ exports.storeReceiveService = {
                 yield conn.execute(insertSql, params);
                 // mark receive approved
                 yield conn.execute(`UPDATE store_receives SET status = 'approved', approved_by_id = ?, approved_at = NOW() WHERE id = ?`, [approvedById, receiveId]);
+                // --- AUDIT: create audit records for each item received ---
+                for (const it of items) {
+                    yield inventoryAuditService_1.inventoryAuditService.createAudit({
+                        location_type: "store",
+                        location_id: receive.store_id,
+                        item_id: it.item_id,
+                        txn_type: "receive",
+                        quantity_in: it.quantity,
+                        reference_id: receiveId,
+                        reference_table: "store_receives",
+                        note: "Store receive approved",
+                    });
+                }
                 return true;
             }));
         });
