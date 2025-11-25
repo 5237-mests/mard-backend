@@ -49,6 +49,7 @@ class SalesController {
     //     res.status(500).json({ error: `Failed to fetch sales: ${error}` });
     //   }
     // }
+    // get all sales for a specific shop
     static getSales(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { shopId, startDate, endDate } = req.query;
@@ -67,7 +68,7 @@ class SalesController {
             }
         });
     }
-    // get all sales for admin
+    // get all sales for admin.
     static getAllSales(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -77,6 +78,20 @@ class SalesController {
             catch (error) {
                 console.error("Error fetching sales:", error);
                 res.status(500).json({ error: `Failed to fetch sales: ${error}` });
+            }
+        });
+    }
+    // get sale by id
+    static getSaleById(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { id } = req.params;
+            try {
+                const sale = yield salesService_1.SalesService.getSaleById(Number(id));
+                res.status(200).json(sale);
+            }
+            catch (error) {
+                console.error("Error fetching sale:", error);
+                res.status(500).json({ error: `Failed to fetch sale: ${error}` });
             }
         });
     }

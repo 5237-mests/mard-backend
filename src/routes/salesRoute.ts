@@ -9,7 +9,7 @@ import { SalesPaymentController } from "../controllers/salesPaymentController";
 
 const router = express.Router();
 
-// POST /api/sales - Process a sale with multiple items
+// POST /api/sales - Process a sale with multiple items.
 router.post(
   "/sales",
   authenticateToken,
@@ -30,5 +30,8 @@ router.get(
   authorizeRole(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]),
   SalesController.getAllSales
 );
+
+// GET /api/sales/:id - Retrieve sale by ID
+router.get("/sales/:id", authenticateToken, SalesController.getSaleById);
 
 export default router;

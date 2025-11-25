@@ -98,6 +98,52 @@ class SalesService {
             }));
         });
     }
+    // get sale by ID
+    static getSaleById(saleId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const salesRows = yield (0, db_1.query)(`
+      SELECT 
+        s.id, 
+        s.shop_id, 
+        sh.name AS shop,
+        s.sold_by_id, 
+        u.name AS seller,
+        s.total_amount, 
+        s.customer_name, 
+        s.customer_contact,
+        s.status, 
+        s.created_at,
+        GROUP_CONCAT(
+          JSON_OBJECT(
+            'id', si.id,
+            'item_id', si.item_id,
+            'name', i.name,
+            'model', i.model,
+            'quantity', si.quantity,
+            'price', si.price,
+            'refunded_quantity', si.refunded_quantity,
+            'refunded_price', si.refunded_price,
+            'item_serial_number', si.item_serial_number
+          )
+        ) AS items
+      FROM sales s
+      LEFT JOIN sale_items si ON s.id = si.sale_id
+      LEFT JOIN items i ON si.item_id = i.id
+      LEFT JOIN users u ON s.sold_by_id = u.id
+      LEFT JOIN shops sh ON s.shop_id = sh.id
+      WHERE s.id = ?
+      GROUP BY s.id
+      ORDER BY s.created_at DESC
+      `, [saleId]);
+            // return salesRows[0] || null;
+            if (salesRows.length === 0) {
+                return null;
+            }
+            const sale = salesRows[0];
+            return Object.assign(Object.assign({}, sale), { items: sale.items ? JSON.parse(`[${sale.items}]`) : [] });
+        });
+    }
+    // Get all sales for a specific shop with optional date filtering
     static getSales(shopId, startDate, endDate) {
         return __awaiter(this, void 0, void 0, function* () {
             let queryStr = `
@@ -158,11 +204,14 @@ class SalesService {
         s.created_at,
         GROUP_CONCAT(
           JSON_OBJECT(
+            'id', si.id,
             'item_id', si.item_id,
             'name', i.name,
             'model', i.model,
             'quantity', si.quantity,
             'price', si.price,
+            'refunded_quantity', si.refunded_quantity,
+            'refunded_price', si.refunded_price,
             'item_serial_number', si.item_serial_number
           )
         ) AS items

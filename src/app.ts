@@ -34,6 +34,7 @@ import deadstockRoutes from "./routes/deadstockRoutes";
 import storeReceiveRoutes from "./routes/storeReceiveRoutes";
 import itemRequestRoutes from "./routes/itemRequestRoutes";
 import inventoryAuditRoutes from "./routes/inventoryAuditRoutes";
+import refundRoutes from "./routes/refundRoutes";
 
 dotenv.config();
 connectDB();
@@ -121,6 +122,7 @@ app.use("/api/deadstock", deadstockRoutes);
 app.use("/api/store-receives", storeReceiveRoutes);
 app.use("/api/item-requests", itemRequestRoutes);
 app.use("/api/inventory-audits", inventoryAuditRoutes);
+app.use("/api/refunds", refundRoutes);
 
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {

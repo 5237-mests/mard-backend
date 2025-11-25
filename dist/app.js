@@ -38,6 +38,7 @@ const deadstockRoutes_1 = __importDefault(require("./routes/deadstockRoutes"));
 const storeReceiveRoutes_1 = __importDefault(require("./routes/storeReceiveRoutes"));
 const itemRequestRoutes_1 = __importDefault(require("./routes/itemRequestRoutes"));
 const inventoryAuditRoutes_1 = __importDefault(require("./routes/inventoryAuditRoutes"));
+const refundRoutes_1 = __importDefault(require("./routes/refundRoutes"));
 dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
@@ -111,6 +112,7 @@ app.use("/api/deadstock", deadstockRoutes_1.default);
 app.use("/api/store-receives", storeReceiveRoutes_1.default);
 app.use("/api/item-requests", itemRequestRoutes_1.default);
 app.use("/api/inventory-audits", inventoryAuditRoutes_1.default);
+app.use("/api/refunds", refundRoutes_1.default);
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));

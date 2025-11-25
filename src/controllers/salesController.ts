@@ -53,6 +53,7 @@ export class SalesController {
   //   }
   // }
 
+  // get all sales for a specific shop
   static async getSales(req: Request, res: Response) {
     const { shopId, startDate, endDate } = req.query;
 
@@ -75,7 +76,7 @@ export class SalesController {
     }
   }
 
-  // get all sales for admin
+  // get all sales for admin.
   static async getAllSales(req: Request, res: Response) {
     try {
       const sales = await SalesService.getAllSales();
@@ -83,6 +84,18 @@ export class SalesController {
     } catch (error) {
       console.error("Error fetching sales:", error);
       res.status(500).json({ error: `Failed to fetch sales: ${error}` });
+    }
+  }
+
+  // get sale by id
+  static async getSaleById(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+      const sale = await SalesService.getSaleById(Number(id));
+      res.status(200).json(sale);
+    } catch (error) {
+      console.error("Error fetching sale:", error);
+      res.status(500).json({ error: `Failed to fetch sale: ${error}` });
     }
   }
 }

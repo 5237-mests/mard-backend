@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const refundController_1 = require("../controllers/refundController");
+const authMiddleware_1 = require("../middleware/authMiddleware");
+const router = (0, express_1.Router)();
+router.post("/", authMiddleware_1.authenticateToken, refundController_1.refundController.createRefund);
+router.post("/from-sale", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, refundController_1.refundController.createRefundFromSaleId);
+router.get("/", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, refundController_1.refundController.listRefunds);
+router.get("/:id", authMiddleware_1.authenticateToken, refundController_1.refundController.getRefund);
+exports.default = router;
