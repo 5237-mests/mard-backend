@@ -38,6 +38,7 @@ class storeReceiveController {
             }
         });
     }
+    // Add items to an existing receive
     static addItems(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -97,11 +98,39 @@ class storeReceiveController {
             }
         });
     }
+    // updateReceiveItems
+    static updateReceiveItems(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const receiveId = Number(req.params.id);
+                const items = req.body.items;
+                if (!Array.isArray(items) || items.length === 0) {
+                    return res.status(400).json({ message: "items array is required" });
+                }
+                yield storeReceiveService_1.storeReceiveService.updateReceiveItems(receiveId, items);
+                res.status(201).json({ success: true });
+            }
+            catch (error) {
+                res
+                    .status(400)
+                    .json({ message: error.message || "Failed to update items" });
+            }
+        });
+    }
+    /**
+     * Delete a single item from a receive.
+     * Only items of pending receives can be deleted.
+     * @param {Request} req - Express request object
+     * @param {Response} res - Express response object
+     * @returns {Promise<void>} - Promise resolving to void
+     * @throws {Error} - Error with message "Failed to delete receive item"
+     */
     static deleteReceiveItem(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const itemRowId = Number(req.params.itemId);
-                yield storeReceiveService_1.storeReceiveService.deleteReceiveItem(itemRowId);
+                const itemId = Number(req.params.itemId);
+                const receiveId = Number(req.params.id);
+                yield storeReceiveService_1.storeReceiveService.deleteReceiveItem(receiveId, itemId);
                 res.status(204).send();
             }
             catch (error) {

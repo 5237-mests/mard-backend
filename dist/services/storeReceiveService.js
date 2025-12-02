@@ -161,22 +161,110 @@ exports.storeReceiveService = {
             }));
         });
     },
+    // update list of item in receive
+    // not implemented: bulk update of multiple items at once
+    // if the item not in the receive add it to the receive
+    updateReceiveItems(receiveId, items) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!items || items.length === 0)
+                return;
+            return yield (0, db_1.transaction)((conn) => __awaiter(this, void 0, void 0, function* () {
+                var _a, _b;
+                const [rows] = yield conn.execute("SELECT id, status FROM store_receives WHERE id = ? FOR UPDATE", [receiveId]);
+                if (!(rows === null || rows === void 0 ? void 0 : rows.length))
+                    throw new Error("Receive not found");
+                if (rows[0].status !== "pending")
+                    throw new Error("Only pending receives can be edited");
+                // validate item ids exist in the items table
+                const itemIds = Array.from(new Set(items.map((i) => Number(i.item_id)).filter(Boolean)));
+                if (itemIds.length) {
+                    const placeholders = itemIds.map(() => "?").join(",");
+                    const [existing] = yield conn.execute(`SELECT id FROM items WHERE id IN (${placeholders})`, itemIds);
+                    const existingIds = new Set((existing || []).map((r) => r.id));
+                    const missing = itemIds.filter((id) => !existingIds.has(id));
+                    if (missing.length)
+                        throw new Error(`Items not found: ${missing.join(", ")}`);
+                }
+                for (const it of items) {
+                    if (it.item_id === undefined || it.item_id === null)
+                        throw new Error("item_id is required");
+                    // check if the item already exists in this receive
+                    const [existingRows] = yield conn.execute("SELECT id, quantity, cost_price, note FROM store_receive_items WHERE receive_id = ? AND item_id = ? FOR UPDATE", [receiveId, it.item_id]);
+                    const existingRow = existingRows === null || existingRows === void 0 ? void 0 : existingRows[0];
+                    // If row exists -> perform partial update based on provided keys
+                    if (existingRow) {
+                        const sets = [];
+                        const params = [];
+                        if (it.quantity !== undefined) {
+                            const qty = Number(it.quantity);
+                            if (!Number.isInteger(qty) || qty <= 0)
+                                throw new Error("Quantity must be a positive integer");
+                            sets.push("quantity = ?");
+                            params.push(qty);
+                        }
+                        if (it.cost_price !== undefined) {
+                            const cp = it.cost_price != null ? Math.round(Number(it.cost_price)) : null;
+                            sets.push("cost_price = ?");
+                            params.push(cp);
+                        }
+                        if (it.note !== undefined) {
+                            sets.push("note = ?");
+                            params.push((_a = it.note) !== null && _a !== void 0 ? _a : null);
+                        }
+                        if (sets.length) {
+                            params.push(existingRow.id); // WHERE id = ?
+                            yield conn.execute(`UPDATE store_receive_items SET ${sets.join(", ")} WHERE id = ?`, params);
+                        }
+                        // nothing to update if no sets - skip
+                        continue;
+                    }
+                    // Row doesn't exist -> insert it (require quantity)
+                    if (it.quantity === undefined || it.quantity === null)
+                        throw new Error(`Cannot insert item ${it.item_id} into receive without quantity`);
+                    const qty = Number(it.quantity);
+                    if (!Number.isInteger(qty) || qty <= 0)
+                        throw new Error("Quantity must be a positive integer");
+                    const costPriceValue = it.cost_price != null ? Math.round(Number(it.cost_price)) : null;
+                    const noteValue = (_b = it.note) !== null && _b !== void 0 ? _b : null;
+                    yield conn.execute(`INSERT INTO store_receive_items (receive_id, item_id, quantity, cost_price, note)
+           VALUES (?, ?, ?, ?, ?)`, [receiveId, it.item_id, qty, costPriceValue, noteValue]);
+                }
+                return true;
+            }));
+        });
+    },
     /**
      * Delete a receive item (only if parent receive is pending).
      */
-    deleteReceiveItem(itemRowId) {
+    // async deleteReceiveItem(itemRowId: number) {
+    //   return await transaction(async (conn: any) => {
+    //     const [rows]: any = await conn.execute(
+    //       `SELECT ri.*, r.status FROM store_receive_items ri
+    //        JOIN store_receives r ON ri.receive_id = r.id
+    //        WHERE ri.id = ? FOR UPDATE`,
+    //       [itemRowId]
+    //     );
+    //     if (!rows?.length) throw new Error("Receive item not found");
+    //     if (rows[0].status !== "pending")
+    //       throw new Error("Only items of pending receives can be deleted");
+    //     await conn.execute("DELETE FROM store_receive_items WHERE id = ?", [
+    //       itemRowId,
+    //     ]);
+    //     return true;
+    //   });
+    // },
+    // delete/remove item from receive item list
+    deleteReceiveItem(receiveId, itemId) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield (0, db_1.transaction)((conn) => __awaiter(this, void 0, void 0, function* () {
                 const [rows] = yield conn.execute(`SELECT ri.*, r.status FROM store_receive_items ri
          JOIN store_receives r ON ri.receive_id = r.id
-         WHERE ri.id = ? FOR UPDATE`, [itemRowId]);
+         WHERE ri.receive_id = ? AND ri.item_id = ? FOR UPDATE`, [receiveId, itemId]);
                 if (!(rows === null || rows === void 0 ? void 0 : rows.length))
                     throw new Error("Receive item not found");
                 if (rows[0].status !== "pending")
                     throw new Error("Only items of pending receives can be deleted");
-                yield conn.execute("DELETE FROM store_receive_items WHERE id = ?", [
-                    itemRowId,
-                ]);
+                yield conn.execute("DELETE FROM store_receive_items WHERE receive_id = ? AND item_id = ?", [receiveId, itemId]);
                 return true;
             }));
         });

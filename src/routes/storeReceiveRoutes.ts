@@ -27,12 +27,20 @@ router.post(
 );
 
 // edit receive (only pending) - RECEIVER or ADMIN
+// router.patch(
+//   "/:id",
+//   authenticateToken,
+//   authorizeUser,
+//   authorizeRole(["RECEIVER", "ADMIN"]),
+//   storeReceiveController.updateReceive
+// );
+
+// updateReceiveItems
 router.patch(
   "/:id",
   authenticateToken,
-  authorizeUser,
   authorizeRole(["RECEIVER", "ADMIN"]),
-  storeReceiveController.updateReceive
+  storeReceiveController.updateReceiveItems
 );
 
 // update/delete individual receive item (only pending) - RECEIVER or ADMIN
@@ -43,8 +51,10 @@ router.patch(
   authorizeRole(["RECEIVER", "ADMIN"]),
   storeReceiveController.updateReceiveItem
 );
+
+// delete individual receive item (only pending) - RECEIVER or ADMIN
 router.delete(
-  "/items/:itemId",
+  "/:id/items/:itemId",
   authenticateToken,
   authorizeRole(["RECEIVER", "ADMIN"]),
   storeReceiveController.deleteReceiveItem
@@ -57,6 +67,8 @@ router.get(
   authorizeRole(["STOREKEEPER", "RECEIVER", "ADMIN"]),
   storeReceiveController.listReceives
 );
+
+// get receive by id (STOREKEEPER, RECEIVER, ADMIN)
 router.get(
   "/:id",
   authenticateToken,
@@ -64,7 +76,7 @@ router.get(
   storeReceiveController.getReceiveById
 );
 
-// approve / reject (STOREKEEPER or ADMIN)
+// approve (STOREKEEPER or ADMIN)
 router.post(
   "/:id/approve",
   authenticateToken,
@@ -72,6 +84,7 @@ router.post(
   authorizeRole(["STOREKEEPER", "ADMIN"]),
   storeReceiveController.approveReceive
 );
+// reject receive (STOREKEEPER or ADMIN)
 router.post(
   "/:id/reject",
   authenticateToken,
