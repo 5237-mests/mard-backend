@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-// import cors from "cors";
+import cors from "cors";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import errorHandler from "./lib/errorHandler";
@@ -35,6 +35,7 @@ import storeReceiveRoutes from "./routes/storeReceiveRoutes";
 import itemRequestRoutes from "./routes/itemRequestRoutes";
 import inventoryAuditRoutes from "./routes/inventoryAuditRoutes";
 import refundRoutes from "./routes/refundRoutes";
+import balanceRoutes from "./routes/liveBalance";
 
 dotenv.config();
 connectDB();
@@ -45,12 +46,12 @@ const PORT = process.env.PORT || 3001;
 // --- Middleware ---
 app.use(express.json());
 
-// --- CORS configuration ---.
-// const corsOptions = {
-//   origin: "http://localhost:8080",
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
+// --- CORS configuration ---
+const corsOptions = {
+  origin: "http://localhost:8080",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 // --- Static files (Vite build) ---
 const clientBuildPath = path.join(__dirname, "../client/dist");
@@ -123,6 +124,7 @@ app.use("/api/store-receives", storeReceiveRoutes);
 app.use("/api/item-requests", itemRequestRoutes);
 app.use("/api/inventory-audits", inventoryAuditRoutes);
 app.use("/api/refunds", refundRoutes);
+app.use("/api/balance", balanceRoutes);
 
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {

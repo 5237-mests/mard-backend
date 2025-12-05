@@ -75,7 +75,7 @@ DB_USERNAME=root
 DB_PASSWORD=password
 DB_DATABASE=marddb
    JWT_SECRET=<your-jwt-secret>
-   ```
+```
 
 4. Run the application:
    ```
@@ -112,6 +112,8 @@ docker-compose up --build
 
 Dummy seed data can be created using a separate script or included in the initial setup. Refer to the documentation for details on how to seed the database.
 
-## License
+## To kill all node processes
 
-This project is licensed under the MIT License.
+```
+kill -9 $(ps faux | grep node | grep -v grep | awk {'print $2'})
+```
