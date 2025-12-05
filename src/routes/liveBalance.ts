@@ -1,16 +1,14 @@
 import { Router } from "express";
-// import { getLiveBalance } from "../controllers/liveBalance";
 import { liveBalancePivot } from "../controllers/liveBalance";
+import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = Router();
 
 /**
  * GET /api/balance/live
  * Query:
- *   shop_id=1
- *   store_id=1
  *   search=cement
  */
-router.get("/live", liveBalancePivot);
+router.get("/live", authenticateToken, liveBalancePivot);
 
 export default router;
