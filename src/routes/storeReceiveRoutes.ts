@@ -14,7 +14,7 @@ router.post(
   authenticateToken,
   authorizeUser,
   authorizeRole(["RECEIVER", "ADMIN"]),
-  storeReceiveController.createReceive
+  storeReceiveController.createReceive,
 );
 
 // add items to receive (RECEIVER or ADMIN)
@@ -23,7 +23,7 @@ router.post(
   authenticateToken,
   authorizeUser,
   authorizeRole(["RECEIVER", "ADMIN"]),
-  storeReceiveController.addItems
+  storeReceiveController.addItems,
 );
 
 // edit receive (only pending) - RECEIVER or ADMIN
@@ -40,7 +40,7 @@ router.patch(
   "/:id",
   authenticateToken,
   authorizeRole(["RECEIVER", "ADMIN"]),
-  storeReceiveController.updateReceiveItems
+  storeReceiveController.updateReceiveItems,
 );
 
 // update/delete individual receive item (only pending) - RECEIVER or ADMIN
@@ -49,7 +49,7 @@ router.patch(
   authenticateToken,
   authorizeUser,
   authorizeRole(["RECEIVER", "ADMIN"]),
-  storeReceiveController.updateReceiveItem
+  storeReceiveController.updateReceiveItem,
 );
 
 // delete individual receive item (only pending) - RECEIVER or ADMIN
@@ -57,7 +57,7 @@ router.delete(
   "/:id/items/:itemId",
   authenticateToken,
   authorizeRole(["RECEIVER", "ADMIN"]),
-  storeReceiveController.deleteReceiveItem
+  storeReceiveController.deleteReceiveItem,
 );
 
 // list & get (STOREKEEPER, RECEIVER, ADMIN)
@@ -65,7 +65,7 @@ router.get(
   "/",
   authenticateToken,
   authorizeRole(["STOREKEEPER", "RECEIVER", "ADMIN"]),
-  storeReceiveController.listReceives
+  storeReceiveController.listReceives,
 );
 
 // get receive by id (STOREKEEPER, RECEIVER, ADMIN)
@@ -73,7 +73,7 @@ router.get(
   "/:id",
   authenticateToken,
   authorizeRole(["STOREKEEPER", "RECEIVER", "ADMIN"]),
-  storeReceiveController.getReceiveById
+  storeReceiveController.getReceiveById,
 );
 
 // approve (STOREKEEPER or ADMIN)
@@ -82,7 +82,7 @@ router.post(
   authenticateToken,
   authorizeUser,
   authorizeRole(["STOREKEEPER", "ADMIN"]),
-  storeReceiveController.approveReceive
+  storeReceiveController.approveReceive,
 );
 // reject receive (STOREKEEPER or ADMIN)
 router.post(
@@ -90,15 +90,23 @@ router.post(
   authenticateToken,
   authorizeUser,
   authorizeRole(["STOREKEEPER", "ADMIN"]),
-  storeReceiveController.rejectReceive
+  storeReceiveController.rejectReceive,
 );
 
-// delete receive (only pending) - ADMIN or RECEIVER
+// delete receive (only pending) - ADMIN or RECEIVER.
 router.delete(
   "/:id",
   authenticateToken,
   authorizeRole(["ADMIN", "RECEIVER"]),
-  storeReceiveController.deleteReceive
+  storeReceiveController.deleteReceive,
+);
+
+// delete approved receive
+router.delete(
+  "/approved/:id",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  storeReceiveController.deleteApprovedReceive,
 );
 
 export default router;

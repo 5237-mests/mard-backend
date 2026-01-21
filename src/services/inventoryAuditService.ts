@@ -138,4 +138,10 @@ export const inventoryAuditService = {
     if (!rows || rows.length === 0) throw new Error("Audit not found");
     return rows[0];
   },
+
+  // delete audit record
+  async deleteAudit(id: number) {
+    const sql = `DELETE FROM inventory_audit WHERE id = ?`;
+    return await query(sql, [id]);
+  },
 };

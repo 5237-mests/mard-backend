@@ -84,15 +84,15 @@ app.use(
         res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
       }
     },
-  })
+  }),
 );
 
 // --- Serve uploads ---
 app.use(
   "/uploads",
   express.static(
-    path.join(process.env.HOME || "/home/mardtryj", "uploads/products")
-  )
+    path.join(process.env.HOME || "/home/mardtryj", "uploads/products"),
+  ),
 );
 
 // --- API Routes ---

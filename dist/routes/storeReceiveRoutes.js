@@ -30,6 +30,8 @@ router.get("/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.auth
 router.post("/:id/approve", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, (0, authMiddleware_1.authorizeRole)(["STOREKEEPER", "ADMIN"]), storeReceiveController_1.storeReceiveController.approveReceive);
 // reject receive (STOREKEEPER or ADMIN)
 router.post("/:id/reject", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, (0, authMiddleware_1.authorizeRole)(["STOREKEEPER", "ADMIN"]), storeReceiveController_1.storeReceiveController.rejectReceive);
-// delete receive (only pending) - ADMIN or RECEIVER
+// delete receive (only pending) - ADMIN or RECEIVER.
 router.delete("/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "RECEIVER"]), storeReceiveController_1.storeReceiveController.deleteReceive);
+// delete approved receive
+router.delete("/approved/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), storeReceiveController_1.storeReceiveController.deleteApprovedReceive);
 exports.default = router;

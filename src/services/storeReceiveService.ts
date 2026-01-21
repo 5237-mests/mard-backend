@@ -35,7 +35,7 @@ export const storeReceiveService = {
     const res: any = await query(
       `INSERT INTO store_receives (store_id, reference_no, status, created_by_id, created_at)
        VALUES (?, ?, 'pending', ?, NOW())`,
-      [store_id, reference_no, created_by_id]
+      [store_id, reference_no, created_by_id],
     );
     return Number(res.insertId);
   },
@@ -51,7 +51,7 @@ export const storeReceiveService = {
       quantity: number;
       cost_price?: number | null;
       note?: string | null;
-    }>
+    }>,
   ) {
     if (!items || items.length === 0) return;
 
@@ -59,7 +59,7 @@ export const storeReceiveService = {
       // check receive exists and pending
       const [recvRows]: any = await conn.execute(
         "SELECT id, store_id, status FROM store_receives WHERE id = ? FOR UPDATE",
-        [receiveId]
+        [receiveId],
       );
       if (!recvRows?.length) throw new Error("Receive not found");
       const receive = recvRows[0];
@@ -72,7 +72,7 @@ export const storeReceiveService = {
         const placeholders = itemIds.map(() => "?").join(",");
         const [existing]: any = await conn.execute(
           `SELECT id FROM items WHERE id IN (${placeholders})`,
-          itemIds
+          itemIds,
         );
         const existingIds = new Set((existing || []).map((r: any) => r.id));
         const missing = itemIds.filter((id) => !existingIds.has(id));
@@ -96,7 +96,7 @@ export const storeReceiveService = {
           it.item_id,
           qty,
           costPriceValue,
-          it.note ?? null
+          it.note ?? null,
         );
       }
 
@@ -115,12 +115,12 @@ export const storeReceiveService = {
    */
   async updateReceive(
     receiveId: number,
-    updates: { store_id?: number; reference_no?: string | null }
+    updates: { store_id?: number; reference_no?: string | null },
   ) {
     return await transaction(async (conn: any) => {
       const [rows]: any = await conn.execute(
         "SELECT id, status FROM store_receives WHERE id = ? FOR UPDATE",
-        [receiveId]
+        [receiveId],
       );
       if (!rows?.length) throw new Error("Receive not found");
       if (rows[0].status !== "pending")
@@ -132,7 +132,7 @@ export const storeReceiveService = {
         // validate store
         const srows: any = await conn.execute(
           "SELECT id FROM stores WHERE id = ?",
-          [updates.store_id]
+          [updates.store_id],
         );
         if (!srows?.length) throw new Error("Store not found");
         sets.push("store_id = ?");
@@ -147,7 +147,7 @@ export const storeReceiveService = {
       params.push(receiveId);
       await conn.execute(
         `UPDATE store_receives SET ${sets.join(", ")} WHERE id = ?`,
-        params
+        params,
       );
       return true;
     });
@@ -162,14 +162,14 @@ export const storeReceiveService = {
       quantity?: number;
       cost_price?: number | null;
       note?: string | null;
-    }
+    },
   ) {
     return await transaction(async (conn: any) => {
       const [rows]: any = await conn.execute(
         `SELECT ri.*, r.status FROM store_receive_items ri
          JOIN store_receives r ON ri.receive_id = r.id
          WHERE ri.id = ? FOR UPDATE`,
-        [itemRowId]
+        [itemRowId],
       );
       if (!rows?.length) throw new Error("Receive item not found");
       if (rows[0].status !== "pending")
@@ -197,7 +197,7 @@ export const storeReceiveService = {
       params.push(itemRowId);
       await conn.execute(
         `UPDATE store_receive_items SET ${sets.join(", ")} WHERE id = ?`,
-        params
+        params,
       );
       return true;
     });
@@ -213,13 +213,13 @@ export const storeReceiveService = {
       quantity?: number;
       cost_price?: number;
       note?: string;
-    }>
+    }>,
   ) {
     if (!items || items.length === 0) return;
     return await transaction(async (conn: any) => {
       const [rows]: any = await conn.execute(
         "SELECT id, status FROM store_receives WHERE id = ? FOR UPDATE",
-        [receiveId]
+        [receiveId],
       );
       if (!rows?.length) throw new Error("Receive not found");
       if (rows[0].status !== "pending")
@@ -227,13 +227,13 @@ export const storeReceiveService = {
 
       // validate item ids exist in the items table
       const itemIds = Array.from(
-        new Set(items.map((i) => Number(i.item_id)).filter(Boolean))
+        new Set(items.map((i) => Number(i.item_id)).filter(Boolean)),
       );
       if (itemIds.length) {
         const placeholders = itemIds.map(() => "?").join(",");
         const [existing]: any = await conn.execute(
           `SELECT id FROM items WHERE id IN (${placeholders})`,
-          itemIds
+          itemIds,
         );
         const existingIds = new Set((existing || []).map((r: any) => r.id));
         const missing = itemIds.filter((id) => !existingIds.has(id));
@@ -248,7 +248,7 @@ export const storeReceiveService = {
         // check if the item already exists in this receive
         const [existingRows]: any = await conn.execute(
           "SELECT id, quantity, cost_price, note FROM store_receive_items WHERE receive_id = ? AND item_id = ? FOR UPDATE",
-          [receiveId, it.item_id]
+          [receiveId, it.item_id],
         );
         const existingRow = existingRows?.[0];
 
@@ -281,7 +281,7 @@ export const storeReceiveService = {
             params.push(existingRow.id); // WHERE id = ?
             await conn.execute(
               `UPDATE store_receive_items SET ${sets.join(", ")} WHERE id = ?`,
-              params
+              params,
             );
           }
           // nothing to update if no sets - skip
@@ -291,7 +291,7 @@ export const storeReceiveService = {
         // Row doesn't exist -> insert it (require quantity)
         if (it.quantity === undefined || it.quantity === null)
           throw new Error(
-            `Cannot insert item ${it.item_id} into receive without quantity`
+            `Cannot insert item ${it.item_id} into receive without quantity`,
           );
         const qty = Number(it.quantity);
         if (!Number.isInteger(qty) || qty <= 0)
@@ -304,7 +304,7 @@ export const storeReceiveService = {
         await conn.execute(
           `INSERT INTO store_receive_items (receive_id, item_id, quantity, cost_price, note)
            VALUES (?, ?, ?, ?, ?)`,
-          [receiveId, it.item_id, qty, costPriceValue, noteValue]
+          [receiveId, it.item_id, qty, costPriceValue, noteValue],
         );
       }
 
@@ -340,7 +340,7 @@ export const storeReceiveService = {
         `SELECT ri.*, r.status FROM store_receive_items ri
          JOIN store_receives r ON ri.receive_id = r.id
          WHERE ri.receive_id = ? AND ri.item_id = ? FOR UPDATE`,
-        [receiveId, itemId]
+        [receiveId, itemId],
       );
       if (!rows?.length) throw new Error("Receive item not found");
       if (rows[0].status !== "pending")
@@ -348,7 +348,7 @@ export const storeReceiveService = {
 
       await conn.execute(
         "DELETE FROM store_receive_items WHERE receive_id = ? AND item_id = ?",
-        [receiveId, itemId]
+        [receiveId, itemId],
       );
       return true;
     });
@@ -368,7 +368,7 @@ export const storeReceiveService = {
        LEFT JOIN users ua ON r.approved_by_id = ua.id
        LEFT JOIN stores s ON r.store_id = s.id
        WHERE r.id = ?`,
-      [receiveId]
+      [receiveId],
     );
     if (!rows.length) throw new Error("Receive not found");
     const receive = rows[0];
@@ -380,7 +380,7 @@ export const storeReceiveService = {
        JOIN items i ON ri.item_id = i.id
        WHERE ri.receive_id = ?
        ORDER BY ri.id ASC`,
-      [receiveId]
+      [receiveId],
     );
 
     return { ...receive, items };
@@ -421,7 +421,7 @@ export const storeReceiveService = {
     if (opts?.search) {
       const s = `%${opts.search}%`;
       where.push(
-        "(r.reference_no LIKE ? OR u.name LIKE ? OR s.name LIKE ? OR CAST(r.id AS CHAR) LIKE ?)"
+        "(r.reference_no LIKE ? OR u.name LIKE ? OR s.name LIKE ? OR CAST(r.id AS CHAR) LIKE ?)",
       );
       params.push(s, s, s, s);
     }
@@ -476,7 +476,7 @@ export const storeReceiveService = {
       // lock receive
       const [rrows]: any = await conn.execute(
         "SELECT id, store_id, status FROM store_receives WHERE id = ? FOR UPDATE",
-        [receiveId]
+        [receiveId],
       );
       if (!rrows?.length) throw new Error("Receive not found");
       const receive = rrows[0];
@@ -486,7 +486,7 @@ export const storeReceiveService = {
       // fetch items
       const [itemsRows]: any = await conn.execute(
         `SELECT id, item_id, quantity FROM store_receive_items WHERE receive_id = ? FOR UPDATE`,
-        [receiveId]
+        [receiveId],
       );
       const items = itemsRows || [];
       if (!items.length) throw new Error("Cannot approve empty receive");
@@ -510,7 +510,7 @@ export const storeReceiveService = {
       // mark receive approved
       await conn.execute(
         `UPDATE store_receives SET status = 'approved', approved_by_id = ?, approved_at = NOW() WHERE id = ?`,
-        [approvedById, receiveId]
+        [approvedById, receiveId],
       );
 
       // --- AUDIT: create audit records for each item received ---
@@ -537,12 +537,12 @@ export const storeReceiveService = {
   async rejectReceive(
     receiveId: number,
     rejectedById: number | null,
-    note?: string | null
+    note?: string | null,
   ) {
     return await transaction(async (conn: any) => {
       const [rrows]: any = await conn.execute(
         "SELECT id, status FROM store_receives WHERE id = ? FOR UPDATE",
-        [receiveId]
+        [receiveId],
       );
       if (!rrows?.length) throw new Error("Receive not found");
       if (rrows[0].status !== "pending")
@@ -550,7 +550,7 @@ export const storeReceiveService = {
 
       await conn.execute(
         `UPDATE store_receives SET status = 'rejected', approved_by_id = ?, approved_at = NOW(), reference_no = reference_no WHERE id = ?`,
-        [rejectedById, receiveId]
+        [rejectedById, receiveId],
       );
 
       // optionally append a note into each receive item or into a dedicated column - here we skip that.
@@ -565,7 +565,7 @@ export const storeReceiveService = {
     return await transaction(async (conn: any) => {
       const [rrows]: any = await conn.execute(
         "SELECT id, status FROM store_receives WHERE id = ? FOR UPDATE",
-        [receiveId]
+        [receiveId],
       );
       if (!rrows?.length) throw new Error("Receive not found");
       if (rrows[0].status !== "pending")
@@ -573,8 +573,59 @@ export const storeReceiveService = {
 
       await conn.execute(
         "DELETE FROM store_receive_items WHERE receive_id = ?",
-        [receiveId]
+        [receiveId],
       );
+      await conn.execute("DELETE FROM store_receives WHERE id = ?", [
+        receiveId,
+      ]);
+      return true;
+    });
+  },
+
+  /**
+   * Delete approved receive and deduct the item quantity from store
+   *
+   */
+  async deleteApprovedReceive(receiveId: number) {
+    return await transaction(async (conn: any) => {
+      const [rrows]: any = await conn.execute(
+        "SELECT id, store_id, status FROM store_receives WHERE id = ? FOR UPDATE",
+        [receiveId],
+      );
+      if (!rrows?.length) throw new Error("Receive not found");
+      if (rrows[0].status !== "approved")
+        throw new Error("Only approved receives can be deleted");
+      // fetch items
+      const [itemsRows]: any = await conn.execute(
+        `SELECT id, item_id, quantity FROM store_receive_items WHERE receive_id = ? FOR UPDATE`,
+        [receiveId],
+      );
+      const items = itemsRows || [];
+      if (!items.length) throw new Error("Cannot delete empty receive");
+
+      // prepare bulk upsert to store_items within the transaction
+      const valuePlaceholders: string[] = [];
+      const params: any[] = [];
+      for (const it of items) {
+        valuePlaceholders.push("(?, ?, ?)");
+        params.push(rrows[0].store_id, it.item_id, it.quantity * -1);
+      }
+
+      // Use INSERT ... ON DUPLICATE KEY UPDATE to increment quantity atomically
+      const insertSql = `
+        INSERT INTO store_items (store_id, item_id, quantity)
+        VALUES ${valuePlaceholders.join(", ")}
+        ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+      `;
+      await conn.execute(insertSql, params);
+
+      // delete RESPECTIVE audit records
+      await conn.execute(
+        "DELETE FROM inventory_audit WHERE reference_id = ? AND reference_table = 'store_receives'",
+        [receiveId],
+      );
+
+      // delete receive
       await conn.execute("DELETE FROM store_receives WHERE id = ?", [
         receiveId,
       ]);

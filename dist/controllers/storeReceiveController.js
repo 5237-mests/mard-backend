@@ -221,5 +221,20 @@ class storeReceiveController {
             }
         });
     }
+    static deleteApprovedReceive(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const receiveId = Number(req.params.id);
+                console.log("R ID. : ", receiveId);
+                yield storeReceiveService_1.storeReceiveService.deleteApprovedReceive(receiveId);
+                res.status(204).send();
+            }
+            catch (error) {
+                res
+                    .status(400)
+                    .json({ message: error.message || "Failed to delete receive" });
+            }
+        });
+    }
 }
 exports.storeReceiveController = storeReceiveController;

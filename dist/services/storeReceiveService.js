@@ -450,4 +450,45 @@ exports.storeReceiveService = {
             }));
         });
     },
+    /**
+     * Delete approved receive and deduct the item quantity from store
+     *
+     */
+    deleteApprovedReceive(receiveId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield (0, db_1.transaction)((conn) => __awaiter(this, void 0, void 0, function* () {
+                const [rrows] = yield conn.execute("SELECT id, store_id, status FROM store_receives WHERE id = ? FOR UPDATE", [receiveId]);
+                if (!(rrows === null || rrows === void 0 ? void 0 : rrows.length))
+                    throw new Error("Receive not found");
+                if (rrows[0].status !== "approved")
+                    throw new Error("Only approved receives can be deleted");
+                // fetch items
+                const [itemsRows] = yield conn.execute(`SELECT id, item_id, quantity FROM store_receive_items WHERE receive_id = ? FOR UPDATE`, [receiveId]);
+                const items = itemsRows || [];
+                if (!items.length)
+                    throw new Error("Cannot delete empty receive");
+                // prepare bulk upsert to store_items within the transaction
+                const valuePlaceholders = [];
+                const params = [];
+                for (const it of items) {
+                    valuePlaceholders.push("(?, ?, ?)");
+                    params.push(rrows[0].store_id, it.item_id, it.quantity * -1);
+                }
+                // Use INSERT ... ON DUPLICATE KEY UPDATE to increment quantity atomically
+                const insertSql = `
+        INSERT INTO store_items (store_id, item_id, quantity)
+        VALUES ${valuePlaceholders.join(", ")}
+        ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+      `;
+                yield conn.execute(insertSql, params);
+                // delete RESPECTIVE audit records
+                yield conn.execute("DELETE FROM inventory_audit WHERE reference_id = ? AND reference_table = 'store_receives'", [receiveId]);
+                // delete receive
+                yield conn.execute("DELETE FROM store_receives WHERE id = ?", [
+                    receiveId,
+                ]);
+                return true;
+            }));
+        });
+    },
 };

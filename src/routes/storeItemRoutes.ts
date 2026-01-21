@@ -18,31 +18,31 @@ router.get("/", storeItemController.getAllstoreItems);
 // Route to get all items for a specific store
 router.get("/:storeId/items", storeItemController.getItemsBystoreId);
 
-// Route to get a specific item by store ID and item ID
+// Route to get a specific item by store ID and item ID.
 router.get(
   "/:storeId/items/:itemId",
-  storeItemController.getItemsBystoreIdAndItemId
+  storeItemController.getItemsBystoreIdAndItemId,
 );
 
-// Route to get all items for a specific item
+// Route to get all items for a specific item.
 router.get("/items/:itemId", storeItemController.getItemsByItemId);
 
-// Route to add a new item to a store or update its quantity
+// Route to add a new item to a store or update its quantity.
 router.post(
   "/:storeId/items/:itemId",
   authenticateToken,
   authorizeUser,
   authorizeRole(["ADMIN", "RECEIVER"]),
-  storeItemController.addstoreItem
+  storeItemController.addstoreItem,
 );
 
-// Route to update the quantity of a specific item in a specific store
+// Route to update the quantity of a specific item in a specific store.
 router.put(
   "/:storeId/items/:itemId",
   authenticateToken,
   authorizeUser,
   authorizeRole(["ADMIN", "RECEIVER"]),
-  storeItemController.updatestoreItemQuantity
+  storeItemController.updatestoreItemQuantity,
 );
 
 // Route to delete a specific item from a specific store
@@ -50,7 +50,7 @@ router.delete(
   "/:storeId/items/:itemId",
   authenticateToken,
   authorizeRole(["ADMIN"]),
-  storeItemController.deletestoreItem
+  storeItemController.deletestoreItem,
 );
 
 // Route to add multiple items to a store
@@ -59,7 +59,7 @@ router.post(
   authenticateToken,
   authorizeUser,
   authorizeRole(["ADMIN", "RECEIVER"]),
-  storeItemController.addMultiplestoreItems
+  storeItemController.addMultiplestoreItems,
 );
 
 export default router;

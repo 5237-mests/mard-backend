@@ -173,7 +173,7 @@ export class storeReceiveController {
       const ok = await storeReceiveService.rejectReceive(
         receiveId,
         userId,
-        note
+        note,
       );
       res.json({ success: !!ok });
     } catch (error: any) {
@@ -187,6 +187,19 @@ export class storeReceiveController {
     try {
       const receiveId = Number(req.params.id);
       await storeReceiveService.deleteReceive(receiveId);
+      res.status(204).send();
+    } catch (error: any) {
+      res
+        .status(400)
+        .json({ message: error.message || "Failed to delete receive" });
+    }
+  }
+
+  public static async deleteApprovedReceive(req: Request, res: Response) {
+    try {
+      const receiveId = Number(req.params.id);
+      console.log("R ID. : ", receiveId);
+      await storeReceiveService.deleteApprovedReceive(receiveId);
       res.status(204).send();
     } catch (error: any) {
       res

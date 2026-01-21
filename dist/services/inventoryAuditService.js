@@ -134,4 +134,11 @@ exports.inventoryAuditService = {
             return rows[0];
         });
     },
+    // delete audit record
+    deleteAudit(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = `DELETE FROM inventory_audit WHERE id = ?`;
+            return yield (0, db_1.query)(sql, [id]);
+        });
+    },
 };
