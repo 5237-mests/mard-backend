@@ -236,7 +236,7 @@ export interface SaleItem {
   model: string;
   quantity: number;
   price: number;
-  item_serial_number: string | null;
+  item_serial_number?: string | null;
 }
 
 // export interface Sale {
@@ -246,7 +246,7 @@ export interface SaleItem {
 //   total_amount: number;
 //   customer_name: string | null;
 //   customer_contact: string | null;
-//   created_at: string;
+//   created_at?: Date;
 //   items: SaleItem[];
 // }
 
@@ -259,7 +259,7 @@ export interface Order {
   id: number;
   status: "pending" | "approved" | "shipped" | "delivered" | "rejected";
   delivery_details?: string;
-  created_at: string;
+  created_at?: Date;
   updated_at: string;
   items: { item_id: number; name: string; quantity: number; price: number }[];
 }
@@ -287,7 +287,7 @@ export interface Request {
   id: number;
   type: "new_product" | "repurchase";
   status: "pending" | "reviewed" | "approved" | "rejected";
-  created_at: string;
+  created_at?: Date;
   updated_at: string;
   details:
     | NewProductRequest
@@ -311,4 +311,90 @@ export interface ItemQuery {
   max_price?: number;
   available_only?: boolean;
   low_stock?: number;
+}
+
+// types/database.ts (Updated with discount/tax support)
+export interface SaleItemInput {
+  itemId: number;
+  quantitySold: number;
+  price: number;
+  serialNumber?: string;
+  discountAmount?: number; // Absolute discount per item
+  discountPercent?: number; // Percentage discount per item
+  taxAmount?: number; // Tax per item
+}
+
+export interface SaleRequestBody {
+  shopId: string;
+  customerName?: string;
+  customerContact?: string;
+  items: SaleItemInput[];
+  status?: "pending" | "completed" | "refunded";
+  tx_ref?: string;
+  totalDiscount?: number; // Overall sale discount
+  totalTax?: number; // Overall sale tax
+}
+
+export interface SaleQueryParams {
+  shopId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string; // For fuzzy search
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export interface Sale {
+  id: number;
+  shop_id: number;
+  shop_name?: string;
+  sold_by_id: number;
+  seller_name?: string;
+  total_amount: number;
+  customer_name?: string;
+  customer_contact?: string;
+  status: "pending" | "completed" | "refunded";
+  created_at?: Date;
+  tx_ref?: string;
+  // items: SaleItem[];
+  items: any;
+  total_discount?: number;
+  total_tax?: number;
+  final_amount?: number; // total_amount - discount + tax
+}
+
+export interface SaleItem {
+  id: number;
+  item_id: number;
+  name: string;
+  model: string;
+  quantity: number;
+  price: number;
+  refunded_quantity: number;
+  refunded_price: number;
+  item_serial_number?: string | null;
+  // New
+  discount_amount?: number;
+  tax_amount?: number;
+}
+
+export interface PaginatedSalesResult {
+  sales: Sale[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  summary: {
+    totalSalesCount: number;
+    totalAmount: number;
+    totalItemsSold: number;
+    avgSaleValue: number;
+    totalDiscount: number;
+    totalTax: number;
+  };
 }

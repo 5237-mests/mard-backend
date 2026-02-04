@@ -11,27 +11,33 @@ const router = express.Router();
 
 // POST /api/sales - Process a sale with multiple items.
 router.post(
-  "/sales",
+  "/",
   authenticateToken,
   authorizeUser,
   authorizeRole(["ADMIN", "SHOPKEEPER"]),
-  SalesController.createSale
+  SalesController.createSale,
 );
 
-router.post("/sales/pay", authenticateToken, SalesPaymentController.paySale);
+router.post("/pay", authenticateToken, SalesPaymentController.paySale);
 
 // GET /api/sales?shopId= - Retrieve sales for a specific shop
-router.get("/sales", authenticateToken, SalesController.getSales);
+router.get("/", authenticateToken, SalesController.getSales);
 
 // GET all sales for admin
 router.get(
-  "/sales/all",
+  "/all",
   authenticateToken,
   authorizeRole(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]),
-  SalesController.getAllSales
+  SalesController.getSales,
+  // SalesController.getAllSales,
 );
 
 // GET /api/sales/:id - Retrieve sale by ID
-router.get("/sales/:id", authenticateToken, SalesController.getSaleById);
+router.get(
+  "/:id",
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  SalesController.getSaleById,
+);
 
 export default router;

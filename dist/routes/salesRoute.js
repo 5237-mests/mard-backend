@@ -9,12 +9,12 @@ const authMiddleware_1 = require("../middleware/authMiddleware");
 const salesPaymentController_1 = require("../controllers/salesPaymentController");
 const router = express_1.default.Router();
 // POST /api/sales - Process a sale with multiple items.
-router.post("/sales", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), salesController_1.SalesController.createSale);
-router.post("/sales/pay", authMiddleware_1.authenticateToken, salesPaymentController_1.SalesPaymentController.paySale);
+router.post("/", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), salesController_1.SalesController.createSale);
+router.post("/pay", authMiddleware_1.authenticateToken, salesPaymentController_1.SalesPaymentController.paySale);
 // GET /api/sales?shopId= - Retrieve sales for a specific shop
-router.get("/sales", authMiddleware_1.authenticateToken, salesController_1.SalesController.getSales);
+router.get("/", authMiddleware_1.authenticateToken, salesController_1.SalesController.getSales);
 // GET all sales for admin
-router.get("/sales/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]), salesController_1.SalesController.getAllSales);
+router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER", "STOREKEEPER"]), salesController_1.SalesController.getSales);
 // GET /api/sales/:id - Retrieve sale by ID
-router.get("/sales/:id", authMiddleware_1.authenticateToken, salesController_1.SalesController.getSaleById);
+router.get("/:id", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), salesController_1.SalesController.getSaleById);
 exports.default = router;

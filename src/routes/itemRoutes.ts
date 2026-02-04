@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
     // Save outside the repo.
     const uploadDir = path.join(
       process.env.HOME || "/home/mardtryj",
-      "uploads/products"
+      "uploads/products",
     );
     try {
       await fs.mkdir(uploadDir, { recursive: true });
@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
 const fileFilter = (
   req: Express.Request,
   file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  cb: multer.FileFilterCallback,
 ) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
@@ -50,21 +50,21 @@ const router = express.Router();
 router.get(
   "/all",
   authenticateToken,
-  itemController.getAllItems.bind(itemController)
+  itemController.getAllItems.bind(itemController),
 );
 
 router.get(
   "/:id",
   authenticateToken,
-  itemController.getItemById.bind(itemController)
+  itemController.getItemById.bind(itemController),
 );
 
 router.post(
   "/create",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "RECEIVER"]),
   upload.single("image"), //image upload
-  itemController.createItem.bind(itemController)
+  itemController.createItem.bind(itemController),
 );
 
 // router.put(
@@ -76,16 +76,16 @@ router.post(
 router.put(
   "/update/:id",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "RECEIVER"]),
   upload.single("image"), // image update
-  itemController.updateItem.bind(itemController)
+  itemController.updateItem.bind(itemController),
 );
 
 router.delete(
   "/delete/:id",
   authenticateToken,
   authorizeRole(["ADMIN"]),
-  itemController.deleteItem.bind(itemController)
+  itemController.deleteItem.bind(itemController),
 );
 
 export default router;

@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-// import cors from "cors";
+import cors from "cors";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import errorHandler from "./lib/errorHandler";
@@ -47,11 +47,11 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 
 // --- CORS configuration ---
-// const corsOptions = {
-//   origin: "http://localhost:8080",
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
+const corsOptions = {
+  origin: "http://localhost:8080",
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 // --- Static files (Vite build) ---
 const clientBuildPath = path.join(__dirname, "../client/dist");
@@ -111,7 +111,7 @@ app.use("/api/store", storeRoutes);
 app.use("/api/transfer", transferRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/inventory", inventoryRoutes);
-app.use("/api", salesRoutes);
+app.use("/api/sales", salesRoutes);
 app.use("/api", retailerRoutes);
 app.use("/api", factoryAgentRoutes);
 app.use("/api/cart", cartRoutes);
@@ -131,7 +131,7 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(clientBuildPath, "index.html"));
 });
 
-// --- Global error handler ---
+// --- Global error handler ---.
 app.use(errorHandler);
 
 // --- Start server ---

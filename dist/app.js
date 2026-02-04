@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
-// import cors from "cors";
+const cors_1 = __importDefault(require("cors"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
@@ -47,11 +47,11 @@ const PORT = process.env.PORT || 3001;
 // --- Middleware ---
 app.use(express_1.default.json());
 // --- CORS configuration ---
-// const corsOptions = {
-//   origin: "http://localhost:8080",
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
+const corsOptions = {
+    origin: "http://localhost:8080",
+    credentials: true,
+};
+app.use((0, cors_1.default)(corsOptions));
 // --- Static files (Vite build) ---
 const clientBuildPath = path_1.default.join(__dirname, "../client/dist");
 app.use(express_1.default.static(clientBuildPath, {
@@ -101,7 +101,7 @@ app.use("/api/store", storeRoute_1.default);
 app.use("/api/transfer", transferRoutes_1.default);
 app.use("/api/notifications", notificationRoutes_1.default);
 app.use("/api/inventory", inventoryRoutes_1.default);
-app.use("/api", salesRoute_1.default);
+app.use("/api/sales", salesRoute_1.default);
 app.use("/api", retailerRoutes_1.default);
 app.use("/api", factoryAgentRoutes_1.default);
 app.use("/api/cart", cartRoute_1.default);
@@ -119,7 +119,7 @@ app.use("/api/balance", liveBalance_1.default);
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));
 });
-// --- Global error handler ---
+// --- Global error handler ---.
 app.use(errorHandler_1.default);
 // --- Start server ---
 app.listen(PORT, () => {

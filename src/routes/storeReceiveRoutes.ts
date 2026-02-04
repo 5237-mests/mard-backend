@@ -84,7 +84,7 @@ router.post(
   authorizeRole(["STOREKEEPER", "ADMIN"]),
   storeReceiveController.approveReceive,
 );
-// reject receive (STOREKEEPER or ADMIN)
+// reject receive (STOREKEEPER or ADMIN).
 router.post(
   "/:id/reject",
   authenticateToken,
