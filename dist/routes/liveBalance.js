@@ -5,7 +5,7 @@ const liveBalance_1 = require("../controllers/liveBalance");
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = (0, express_1.Router)();
 /**
- * GET /api/balance/live
+ * GET /api/balance/live.
  * Query:
  *   search=cement
  */

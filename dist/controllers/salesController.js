@@ -14,12 +14,12 @@ const salesService_1 = require("../services/salesService");
 class SalesController {
     static createSale(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c, _d;
             const user = req.user;
             // const body = plainToClass(SaleRequestBody, req.body);
             const body = req.body;
             try {
-                const saleId = yield salesService_1.SalesService.processSale(body.shopId, user.id, (_a = body.customerName) !== null && _a !== void 0 ? _a : null, (_b = body.customerContact) !== null && _b !== void 0 ? _b : null, body.items, (_c = body.status) !== null && _c !== void 0 ? _c : "completed", body.tx_ref, (_d = body.totalDiscount) !== null && _d !== void 0 ? _d : 0, (_e = body.totalTax) !== null && _e !== void 0 ? _e : 0);
+                const saleId = yield salesService_1.SalesService.processSale(body.shopId, (_a = user === null || user === void 0 ? void 0 : user.user) === null || _a === void 0 ? void 0 : _a.id, (_b = body.customerName) !== null && _b !== void 0 ? _b : null, (_c = body.customerContact) !== null && _c !== void 0 ? _c : null, body.items, (_d = body.status) !== null && _d !== void 0 ? _d : "completed", body.tx_ref);
                 return res.status(201).json({
                     success: true,
                     saleId,

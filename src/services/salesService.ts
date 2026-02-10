@@ -4,128 +4,128 @@
 // import { inventoryAuditService } from "./inventoryAuditService"; // Import the audit service
 
 // export class SalesService {
-//   static async processSale(
-//     shopId: string,
-//     soldById: number,
-//     customerName: string | null,
-//     customerContact: string | null,
-//     items: SaleItemInput[],
-//     status: "pending" | "completed" | "refunded" = "completed",
-//     tx_ref?: string
-//   ): Promise<number> {
-//     return await transaction(async (connection) => {
-//       const serialNumbers = new Set<string>();
-//       // Validate shop and user association
-//       const [shopKeeperRows] = await connection.query<
-//         { id: number }[] & mysql.RowDataPacket[]
-//       >("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
+// static async processSale(
+//   shopId: string,
+//   soldById: number,
+//   customerName: string | null,
+//   customerContact: string | null,
+//   items: SaleItemInput[],
+//   status: "pending" | "completed" | "refunded" = "completed",
+//   tx_ref?: string
+// ): Promise<number> {
+//   return await transaction(async (connection) => {
+//     const serialNumbers = new Set<string>();
+//     // Validate shop and user association
+//     const [shopKeeperRows] = await connection.query<
+//       { id: number }[] & mysql.RowDataPacket[]
+//     >("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
+//       shopId,
+//       soldById,
+//     ]);
+//     if (shopKeeperRows.length === 0) {
+//       throw new Error("User is not a member of the shop");
+//     }
+
+//     // 1️⃣ Validate stock and serial numbers
+//     for (const item of items) {
+//       const [stockRows] = await connection.query<
+//         ShopItem[] & mysql.RowDataPacket[]
+//       >("SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?", [
+//         shopId,
+//         item.itemId,
+//       ]);
+
+//       const shopItem = stockRows[0];
+//       if (!shopItem) {
+//         throw new Error(`Item ID ${item.itemId} not found in shop`);
+//       }
+//       if (shopItem.quantity < item.quantitySold && status === "completed") {
+//         throw new Error(`Insufficient stock for item ID ${item.itemId}`);
+//       }
+
+//       if (item.serialNumber) {
+//         if (serialNumbers.has(item.serialNumber)) {
+//           throw new Error(`Duplicate serial number ${item.serialNumber}`);
+//         }
+//         serialNumbers.add(item.serialNumber);
+
+//         const [serialRows] = await connection.query<
+//           { id: number }[] & mysql.RowDataPacket[]
+//         >("SELECT id FROM sale_items WHERE item_serial_number = ?", [
+//           item.serialNumber,
+//         ]);
+//         if (serialRows.length > 0) {
+//           throw new Error(
+//             `Serial number ${item.serialNumber} already used in a previous sale`
+//           );
+//         }
+//       }
+//     }
+
+//     // 2️⃣ Calculate total amount
+//     const totalAmount = items.reduce(
+//       (sum, item) => sum + item.quantitySold * item.price,
+//       0
+//     );
+
+//     // 3️⃣ Insert sale record
+//     const [saleResult] = await connection.query<mysql.ResultSetHeader>(
+//       `INSERT INTO sales
+//       (shop_id, sold_by_id, total_amount, customer_name, customer_contact, status, tx_ref, created_at)
+//      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+//       [
 //         shopId,
 //         soldById,
-//       ]);
-//       if (shopKeeperRows.length === 0) {
-//         throw new Error("User is not a member of the shop");
-//       }
+//         totalAmount,
+//         customerName || null,
+//         customerContact || null,
+//         status,
+//         tx_ref || null,
+//       ]
+//     );
 
-//       // 1️⃣ Validate stock and serial numbers
-//       for (const item of items) {
-//         const [stockRows] = await connection.query<
-//           ShopItem[] & mysql.RowDataPacket[]
-//         >("SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?", [
-//           shopId,
-//           item.itemId,
-//         ]);
+//     const saleId = saleResult.insertId;
 
-//         const shopItem = stockRows[0];
-//         if (!shopItem) {
-//           throw new Error(`Item ID ${item.itemId} not found in shop`);
-//         }
-//         if (shopItem.quantity < item.quantitySold && status === "completed") {
-//           throw new Error(`Insufficient stock for item ID ${item.itemId}`);
-//         }
-
-//         if (item.serialNumber) {
-//           if (serialNumbers.has(item.serialNumber)) {
-//             throw new Error(`Duplicate serial number ${item.serialNumber}`);
-//           }
-//           serialNumbers.add(item.serialNumber);
-
-//           const [serialRows] = await connection.query<
-//             { id: number }[] & mysql.RowDataPacket[]
-//           >("SELECT id FROM sale_items WHERE item_serial_number = ?", [
-//             item.serialNumber,
-//           ]);
-//           if (serialRows.length > 0) {
-//             throw new Error(
-//               `Serial number ${item.serialNumber} already used in a previous sale`
-//             );
-//           }
-//         }
-//       }
-
-//       // 2️⃣ Calculate total amount
-//       const totalAmount = items.reduce(
-//         (sum, item) => sum + item.quantitySold * item.price,
-//         0
-//       );
-
-//       // 3️⃣ Insert sale record
-//       const [saleResult] = await connection.query<mysql.ResultSetHeader>(
-//         `INSERT INTO sales
-//         (shop_id, sold_by_id, total_amount, customer_name, customer_contact, status, tx_ref, created_at)
-//        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+//     // 4️⃣ Always insert sale_items (so we know what was sold)
+//     for (const item of items) {
+//       await connection.query(
+//         "INSERT INTO sale_items (sale_id, item_id, quantity, price, item_serial_number) VALUES (?, ?, ?, ?, ?)",
 //         [
-//           shopId,
-//           soldById,
-//           totalAmount,
-//           customerName || null,
-//           customerContact || null,
-//           status,
-//           tx_ref || null,
+//           saleId,
+//           item.itemId,
+//           item.quantitySold,
+//           item.price,
+//           item.serialNumber || null,
 //         ]
 //       );
+//     }
 
-//       const saleId = saleResult.insertId;
-
-//       // 4️⃣ Always insert sale_items (so we know what was sold)
+//     // 5️⃣ Only update stock and create audit when status is 'completed'
+//     if (status === "completed") {
 //       for (const item of items) {
+//         // Update stock
 //         await connection.query(
-//           "INSERT INTO sale_items (sale_id, item_id, quantity, price, item_serial_number) VALUES (?, ?, ?, ?, ?)",
-//           [
-//             saleId,
-//             item.itemId,
-//             item.quantitySold,
-//             item.price,
-//             item.serialNumber || null,
-//           ]
+//           "UPDATE shop_items SET quantity = quantity - ? WHERE shop_id = ? AND item_id = ?",
+//           [item.quantitySold, shopId, item.itemId]
 //         );
+
+//         // Create audit record
+//         await inventoryAuditService.createAudit({
+//           location_type: "shop",
+//           location_id: Number(shopId),
+//           item_id: item.itemId,
+//           txn_type: "sale",
+//           quantity_out: item.quantitySold,
+//           reference_id: saleId,
+//           reference_table: "sales",
+//           note: `Sale transaction`,
+//         });
 //       }
+//     }
 
-//       // 5️⃣ Only update stock and create audit when status is 'completed'
-//       if (status === "completed") {
-//         for (const item of items) {
-//           // Update stock
-//           await connection.query(
-//             "UPDATE shop_items SET quantity = quantity - ? WHERE shop_id = ? AND item_id = ?",
-//             [item.quantitySold, shopId, item.itemId]
-//           );
-
-//           // Create audit record
-//           await inventoryAuditService.createAudit({
-//             location_type: "shop",
-//             location_id: Number(shopId),
-//             item_id: item.itemId,
-//             txn_type: "sale",
-//             quantity_out: item.quantitySold,
-//             reference_id: saleId,
-//             reference_table: "sales",
-//             note: `Sale transaction`,
-//           });
-//         }
-//       }
-
-//       return saleId;
-//     });
-//   }
+//     return saleId;
+//   });
+// }
 
 //   // get sale by ID
 //   static async getSaleById(saleId: number): Promise<Sale | null> {
@@ -380,9 +380,12 @@
 
 //************* */
 // salesService.ts (Complete with improvements: discount/tax, partial refund, search, pagination)
+// import { QueryResult } from "mysql2/promise";
+// import { SaleItemInput, ShopItem, Sale } from "../types/database";
 import { query, transaction } from "../config/db";
 import {
   SaleItemInput,
+  ShopItem,
   Sale,
   SaleQueryParams,
   PaginatedSalesResult,
@@ -393,6 +396,7 @@ import { inventoryAuditService } from "./inventoryAuditService";
 import { count } from "console";
 
 export class SalesService {
+  // 1️⃣ Process sale
   static async processSale(
     shopId: string,
     soldById: number,
@@ -401,97 +405,84 @@ export class SalesService {
     items: SaleItemInput[],
     status: "pending" | "completed" | "refunded" = "completed",
     tx_ref?: string,
-    totalDiscount: number = 0,
-    totalTax: number = 0,
   ): Promise<number> {
     return await transaction(async (connection) => {
-      // Validate shop membership
-      const [shopRows] = await connection.query(
-        "SELECT id FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?",
-        [shopId, soldById],
-      );
-      // console.log("shopRows: ", shopRows);
-      // if (shopRows.length === 0)
-      //   throw new Error("User not authorized for this shop");
-
-      // Validate stock/serial
       const serialNumbers = new Set<string>();
+      // Validate shop and user association
+      const [shopKeeperRows] = await connection.query<
+        { id: number }[] & mysql.RowDataPacket[]
+      >("SELECT * FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?", [
+        shopId,
+        soldById,
+      ]);
+      if (shopKeeperRows.length === 0) {
+        throw new Error("User is not a member of the shop");
+      }
+
+      // 1️⃣ Validate stock and serial numbers
       for (const item of items) {
-        const [stock] = await connection.query(
-          "SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?",
-          [shopId, item.itemId],
-        );
-        // console.log("stock: ", stock);
-        // if (stock[0].quantity < item.quantitySold && status === "completed")
-        //   throw new Error(`Insufficient stock for item ${item.itemId}`);
+        const [stockRows] = await connection.query<
+          ShopItem[] & mysql.RowDataPacket[]
+        >("SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?", [
+          shopId,
+          item.itemId,
+        ]);
+
+        const shopItem = stockRows[0];
+        if (!shopItem) {
+          throw new Error(`Item ID ${item.itemId} not found in shop`);
+        }
+        if (shopItem.quantity < item.quantitySold && status === "completed") {
+          throw new Error(`Insufficient stock for item ID ${item.itemId}`);
+        }
 
         if (item.serialNumber) {
-          if (serialNumbers.has(item.serialNumber))
-            throw new Error(`Duplicate serial ${item.serialNumber}`);
+          if (serialNumbers.has(item.serialNumber)) {
+            throw new Error(`Duplicate serial number ${item.serialNumber}`);
+          }
           serialNumbers.add(item.serialNumber);
-          const [existing] = await connection.query(
-            "SELECT id FROM sale_items WHERE item_serial_number = ?",
-            [item.serialNumber],
-          );
-          // console.log("existing: ", existing);
-          // if (existing.length > 0)
-          //   throw new Error(`Serial ${item.serialNumber} already sold`);
+
+          const [serialRows] = await connection.query<
+            { id: number }[] & mysql.RowDataPacket[]
+          >("SELECT id FROM sale_items WHERE item_serial_number = ?", [
+            item.serialNumber,
+          ]);
+          if (serialRows.length > 0) {
+            throw new Error(
+              `Serial number ${item.serialNumber} already used in a previous sale`,
+            );
+          }
         }
       }
 
-      // Calculate totals with discount/tax
-      let subtotal = items.reduce(
+      // 2️⃣ Calculate total amount
+      const totalAmount = items.reduce(
         (sum, item) => sum + item.quantitySold * item.price,
         0,
       );
-      // let itemDiscount = items.reduce(
-      //   (sum, item) =>
-      //     sum +
-      //     (item.discountAmount ||
-      //       (item.price * (item.discountPercent || 0)) / 100),
-      //   0,
-      // );
-      let itemTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
-      // const totalAmount =
-      //   subtotal - itemDiscount - totalDiscount + itemTax + totalTax;
-      const totalAmount = subtotal + itemTax + totalTax;
 
-      // Insert sale
-      const [result] = await connection.query<mysql.ResultSetHeader>(
-        "INSERT INTO sales (shop_id, sold_by_id, total_amount, customer_name, customer_contact, status, tx_ref, final_amount, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+      // 3️⃣ Insert sale record
+      const [saleResult] = await connection.query<mysql.ResultSetHeader>(
+        `INSERT INTO sales
+        (shop_id, sold_by_id, total_amount, customer_name, customer_contact, status, tx_ref, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           shopId,
           soldById,
-          subtotal,
-          customerName,
-          customerContact,
-          status,
-          tx_ref,
-          // itemDiscount + totalDiscount,
-          totalDiscount,
-          itemTax + totalTax,
           totalAmount,
+          customerName || null,
+          customerContact || null,
+          status,
+          tx_ref || null,
         ],
       );
-      const saleId = result.insertId;
 
-      // Insert items
+      const saleId = saleResult.insertId;
+
+      // 4️⃣ Always insert sale_items (so we know what was sold)
       for (const item of items) {
-        // await connection.query(
-        //   "INSERT INTO sale_items (sale_id, item_id, quantity, price, item_serial_number, discount_amount, tax_amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        //   [
-        //     saleId,
-        //     item.itemId,
-        //     item.quantitySold,
-        //     item.price,
-        //     item.serialNumber || null,
-        //     item.discountAmount || 0,
-        //     item.taxAmount || 0,
-        //   ],
-        // );
-
         await connection.query(
-          "INSERT INTO sale_items (sale_id, item_id, quantity, price, item_serial_number) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO sale_items (sale_id, item_id, quantity, price, item_serial_number) VALUES (?, ?, ?, ?, ?)",
           [
             saleId,
             item.itemId,
@@ -502,13 +493,16 @@ export class SalesService {
         );
       }
 
-      // Stock update + audit if completed
+      // 5️⃣ Only update stock and create audit when status is 'completed'
       if (status === "completed") {
         for (const item of items) {
+          // Update stock
           await connection.query(
             "UPDATE shop_items SET quantity = quantity - ? WHERE shop_id = ? AND item_id = ?",
             [item.quantitySold, shopId, item.itemId],
           );
+
+          // Create audit record
           await inventoryAuditService.createAudit({
             location_type: "shop",
             location_id: Number(shopId),
@@ -517,7 +511,7 @@ export class SalesService {
             quantity_out: item.quantitySold,
             reference_id: saleId,
             reference_table: "sales",
-            note: "Sale completed",
+            note: `Sale transaction`,
           });
         }
       }

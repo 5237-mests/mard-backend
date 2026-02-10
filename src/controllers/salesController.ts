@@ -11,14 +11,12 @@ export class SalesController {
     try {
       const saleId = await SalesService.processSale(
         body.shopId,
-        user.id,
+        user?.user?.id,
         body.customerName ?? null,
         body.customerContact ?? null,
         body.items,
         body.status ?? "completed",
         body.tx_ref,
-        body.totalDiscount ?? 0,
-        body.totalTax ?? 0,
       );
       return res.status(201).json({
         success: true,

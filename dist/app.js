@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
-const cors_1 = __importDefault(require("cors"));
+// import cors from "cors";
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
@@ -47,11 +47,11 @@ const PORT = process.env.PORT || 3001;
 // --- Middleware ---
 app.use(express_1.default.json());
 // --- CORS configuration ---
-const corsOptions = {
-    origin: "http://localhost:8080",
-    credentials: true,
-};
-app.use((0, cors_1.default)(corsOptions));
+// const corsOptions = {
+//   origin: "http://localhost:8080",
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
 // --- Static files (Vite build) ---
 const clientBuildPath = path_1.default.join(__dirname, "../client/dist");
 app.use(express_1.default.static(clientBuildPath, {

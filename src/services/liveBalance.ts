@@ -1,64 +1,177 @@
 import { query } from "../config/db";
 
+interface Location {
+  id: number;
+  name: string;
+  type: "shop" | "store";
+  key: string;
+}
+
 export const getLiveBalancePivot = async (search?: string) => {
   const searchQuery = search ? `%${search}%` : null;
 
-  // 1. Get all shops and stores
-  const shops = await query(`SELECT id, name FROM shops ORDER BY id ASC`);
-  const stores = await query(`SELECT id, name FROM stores ORDER BY id ASC`);
+  /* ================= FETCH LOCATIONS ================= */
 
-  // 2. Build dynamic SQL for pivot
-  const shopColumns = shops
-    .map(
-      (shop) =>
-        `SUM(CASE WHEN ish.shop_id = ${shop.id} THEN ish.quantity ELSE 0 END) AS \`${shop.name}(shop)\``,
-    )
-    .join(", ");
+  const shops: { id: number; name: string }[] = await query(
+    `SELECT id, name FROM shops ORDER BY id`,
+  );
 
-  const storeColumns = stores
-    .map(
-      (store) =>
-        `SUM(CASE WHEN isr.store_id = ${store.id} THEN isr.quantity ELSE 0 END) AS \`${store.name}(store)\``,
-    )
-    .join(", ");
+  const stores: { id: number; name: string }[] = await query(
+    `SELECT id, name FROM stores ORDER BY id`,
+  );
 
-  const totalExpr = [
-    ...shops.map(
-      (s) =>
-        `SUM(CASE WHEN ish.shop_id = ${s.id} THEN ish.quantity ELSE 0 END)`,
-    ),
-    ...stores.map(
-      (s) =>
-        `SUM(CASE WHEN isr.store_id = ${s.id} THEN isr.quantity ELSE 0 END)`,
-    ),
-  ].join(" + ");
+  /* ================= HANDLE EMPTY LOCATIONS ================= */
 
-  // 3. Main SQL query
+  const shopPivotCols =
+    shops.length > 0
+      ? shops
+          .map(
+            (s) =>
+              `SUM(CASE WHEN shop_id = ${s.id} THEN quantity ELSE 0 END) AS shop_${s.id}`,
+          )
+          .join(",")
+      : "0 AS shop_dummy";
+
+  const storePivotCols =
+    stores.length > 0
+      ? stores
+          .map(
+            (s) =>
+              `SUM(CASE WHEN store_id = ${s.id} THEN quantity ELSE 0 END) AS store_${s.id}`,
+          )
+          .join(",")
+      : "0 AS store_dummy";
+
+  /* ================= SHOP PIVOT ================= */
+
+  const shopPivotSQL = `
+    SELECT item_id, ${shopPivotCols}
+    FROM shop_items
+    GROUP BY item_id
+  `;
+
+  /* ================= STORE PIVOT ================= */
+
+  const storePivotSQL = `
+    SELECT item_id, ${storePivotCols}
+    FROM store_items
+    GROUP BY item_id
+  `;
+
+  /* ================= TOTAL EXPRESSION ================= */
+
+  const totalExpr =
+    [
+      ...shops.map((s) => `COALESCE(sp.shop_${s.id},0)`),
+      ...stores.map((s) => `COALESCE(st.store_${s.id},0)`),
+    ].join(" + ") || "0";
+
+  /* ================= MAIN QUERY ================= */
+
   const sql = `
-    SELECT 
+    SELECT
       i.id AS item_id,
-      i.name,
+      TRIM(i.name) AS name,
       i.code,
       i.model,
-      i.price,
-      ${shopColumns},
-      ${storeColumns},
+      COALESCE(i.price,0) AS price,
+
+      ${
+        shops.length > 0
+          ? shops
+              .map((s) => `COALESCE(sp.shop_${s.id},0) AS shop_${s.id}`)
+              .join(",")
+          : ""
+      }
+
+      ${
+        stores.length > 0
+          ? "," +
+            stores
+              .map((s) => `COALESCE(st.store_${s.id},0) AS store_${s.id}`)
+              .join(",")
+          : ""
+      },
+
       (${totalExpr}) AS total_quantity
+
     FROM items i
-    LEFT JOIN shop_items ish ON ish.item_id = i.id
-    LEFT JOIN store_items isr ON isr.item_id = i.id
-    WHERE ? IS NULL OR i.name LIKE ? OR i.code LIKE ? OR i.model LIKE ?
-    GROUP BY i.id, i.name, i.code, i.model, i.price
+    LEFT JOIN (${shopPivotSQL}) sp ON sp.item_id = i.id
+    LEFT JOIN (${storePivotSQL}) st ON st.item_id = i.id
+
+    WHERE ? IS NULL 
+      OR i.name LIKE ? 
+      OR i.code LIKE ? 
+      OR i.model LIKE ?
+
     ORDER BY i.name ASC
   `;
 
-  // 4. Execute query
-  const items: any = await query(sql, [
+  /* ================= EXECUTE ================= */
+
+  const rawItems: any[] = await query(sql, [
     searchQuery,
     searchQuery,
     searchQuery,
     searchQuery,
   ]);
 
-  return { shops, stores, data: items };
+  /* ================= SAFE NUMERIC CONVERSION ================= */
+
+  const items = rawItems.map((item) => {
+    const converted: any = {
+      ...item,
+      price: Number(item.price),
+      total_quantity: Number(item.total_quantity),
+    };
+
+    Object.keys(item).forEach((key) => {
+      if (key.startsWith("shop_") || key.startsWith("store_")) {
+        converted[key] = Number(item[key] ?? 0);
+      }
+    });
+
+    return converted;
+  });
+
+  /* ================= BUILD LOCATIONS ================= */
+
+  const locations: Location[] = [
+    ...shops.map((s) => ({
+      id: s.id,
+      name: s.name,
+      type: "shop" as const,
+      key: `shop_${s.id}`,
+    })),
+    ...stores.map((s) => ({
+      id: s.id,
+      name: s.name,
+      type: "store" as const,
+      key: `store_${s.id}`,
+    })),
+  ];
+
+  /* ================= SUMMARY ================= */
+
+  const total_distinct_items = items.length;
+
+  const total_number_of_items = items.reduce(
+    (sum, i) => sum + i.total_quantity,
+    0,
+  );
+
+  const total_asset_valuation = items.reduce(
+    (sum, i) => sum + i.total_quantity * i.price,
+    0,
+  );
+
+  /* ================= RESPONSE ================= */
+
+  return {
+    total_distinct_items,
+    total_number_of_items,
+    total_asset_valuation,
+    locations,
+    data: items,
+  };
 };

@@ -363,7 +363,7 @@ export interface Sale {
   items: any;
   total_discount?: number;
   total_tax?: number;
-  final_amount?: number; // total_amount - discount + tax
+  final_amount?: number; // total_amount - discount + tax.
 }
 
 export interface SaleItem {

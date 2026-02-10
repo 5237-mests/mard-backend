@@ -5,7 +5,7 @@ import { authenticateToken } from "../middleware/authMiddleware";
 const router = Router();
 
 /**
- * GET /api/balance/live
+ * GET /api/balance/live.
  * Query:
  *   search=cement
  */

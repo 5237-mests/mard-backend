@@ -13,52 +13,32 @@ exports.liveBalancePivot = void 0;
 const liveBalance_1 = require("../services/liveBalance");
 /**
  * GET /balance/live
- * Returns pivoted live inventory balance across shops and stores.
- * Supports optional search query (name, code, model).
  */
 const liveBalancePivot = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a;
     try {
         const { search } = req.query;
-        // Basic sanitization (prevent injection if passed directly to SQL)
+        // Basic sanitization
         const searchStr = typeof search === "string" ? search.trim().slice(0, 100) : undefined;
         const result = yield (0, liveBalance_1.getLiveBalancePivot)(searchStr);
-        if (!result || !Array.isArray(result.data)) {
+        if (!result || !Array.isArray(result.data) || result.data.length === 0) {
             return res.status(200).json({
                 success: true,
                 total_distinct_items: 0,
                 total_number_of_items: 0,
                 total_asset_valuation: 0,
+                locations: (_a = result === null || result === void 0 ? void 0 : result.locations) !== null && _a !== void 0 ? _a : [],
                 data: [],
-                shops: (_a = result === null || result === void 0 ? void 0 : result.shops) !== null && _a !== void 0 ? _a : [],
-                stores: (_b = result === null || result === void 0 ? void 0 : result.stores) !== null && _b !== void 0 ? _b : [],
                 message: "No data available",
             });
         }
-        // Safe number conversion helper
-        const toNumber = (val) => {
-            const num = Number(val);
-            return Number.isNaN(num) ? 0 : num;
-        };
-        // 1. Count of unique item rows
-        const total_distinct_items = result.data.length;
-        // 2. Sum of all total_quantity
-        const total_number_of_items = result.data.reduce((sum, item) => sum + toNumber(item.total_quantity), 0);
-        // 3. Total valuation = Σ (price × total_quantity)
-        const total_asset_valuation = result.data.reduce((sum, item) => {
-            const price = toNumber(item.price);
-            const qty = toNumber(item.total_quantity);
-            return sum + price * qty;
-        }, 0);
         const response = {
             success: true,
-            total_distinct_items,
-            total_number_of_items,
-            // Keep 2 decimal places, but as number (frontend can format nicely)
-            total_asset_valuation: Number(total_asset_valuation.toFixed(2)),
+            total_distinct_items: result.total_distinct_items,
+            total_number_of_items: result.total_number_of_items,
+            total_asset_valuation: Number(result.total_asset_valuation.toFixed(2)),
+            locations: result.locations,
             data: result.data,
-            shops: result.shops,
-            stores: result.stores,
         };
         return res.status(200).json(response);
     }
