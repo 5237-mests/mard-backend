@@ -131,7 +131,7 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(clientBuildPath, "index.html"));
 });
 
-// --- Global error handler ---.
+// --- Global error handler ---
 app.use(errorHandler);
 
 // --- Start server ---
