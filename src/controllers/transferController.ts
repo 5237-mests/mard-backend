@@ -29,21 +29,22 @@ export const adminTransfer = async (req: Request, res: Response) => {
       parseInt(fromId),
       parseInt(toId),
       items,
-      adminId
+      adminId,
     );
     // Email and in-app notification to receiver
     const receiverSql = "SELECT * FROM users WHERE id = ?";
     const receivers = await query(receiverSql, [parseInt(toId)]);
     const receiver = receivers[0];
-    
+
     const message = `Transfer from ${fromId} to you has been completed. Items: ${JSON.stringify(
-      items
+      items,
     )}`;
     if (receiver && receiver.email) {
       await sendEmail(
         receiver.email,
         "You have received a stock transfer",
-        message
+        message,
+        "You have received a stock transfer",
       );
     }
     if (receiver) {
@@ -66,7 +67,7 @@ export const requestStockTransfer = async (req: Request, res: Response) => {
       shopId,
       parseInt(toId),
       items,
-      shopId
+      shopId,
     );
     res.status(201).json({ message: "Transfer request created", transfer });
   } catch (error) {
@@ -81,7 +82,7 @@ export const rejectTransferRequest = async (req: Request, res: Response) => {
   try {
     const transfer = await transferService.rejectTransferRequest(
       parseInt(requestId),
-      rejectorId
+      rejectorId,
     );
     if (!transfer) {
       return res.status(404).json({ message: "Transfer request not found" });
@@ -101,7 +102,7 @@ export const approveTransferRequest = async (req: Request, res: Response) => {
   try {
     const transfer = await transferService.approveTransferRequest(
       parseInt(requestId),
-      approverId
+      approverId,
     );
     if (!transfer) {
       return res.status(404).json({ message: "Transfer request not found" });

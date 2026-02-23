@@ -72,20 +72,6 @@ export class AuthService {
     return updatedUsers[0] as User;
   }
 
-  async loginUser2(email: string, password: string) {
-    const sql = "SELECT * FROM users WHERE email = ?";
-    const users = await query(sql, [email]);
-    const user = users[0];
-
-    if (!user) throw new Error("Invalid credentials");
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) throw new Error("Invalid credentials");
-    if (!user.is_verified) throw new Error("Email not verified");
-
-    return user as User;
-  }
-
   async loginUser(email: string, password: string): Promise<User2> {
     const sql = `
     SELECT u.*, ss.shop_id, sst.store_id
@@ -113,5 +99,52 @@ export class AuthService {
       shopId: user.shop_id,
       storeId: user.store_id,
     } as User2;
+  }
+
+  /**
+   * Find user by email - returns null if not found (important for security)
+   */
+  async findUserByEmail(email: string): Promise<User | null> {
+    const sql = `
+    SELECT id, name, email, password, role, is_verified, verification_token
+    FROM users 
+    WHERE email = ?
+  `;
+    const users = await query(sql, [email.trim().toLowerCase()]);
+
+    if (users.length === 0) return null;
+    return users[0] as User;
+  }
+
+  /**
+   * Find user by ID
+   */
+  async findUserById(id: number): Promise<User | null> {
+    const sql = `
+    SELECT id, name, email, password, role, is_verified
+    FROM users 
+    WHERE id = ?
+  `;
+    const users = await query(sql, [id]);
+
+    if (users.length === 0) return null;
+    return users[0] as User;
+  }
+
+  /**
+   * Update user's password (hashes automatically via UserService)
+   */
+  async updatePassword(
+    userId: number,
+    newPlainPassword: string,
+  ): Promise<void> {
+    const hashedPassword = await UserService.hashPassword(newPlainPassword);
+
+    const sql = `
+    UPDATE users 
+    SET password = ?
+    WHERE id = ?
+  `;
+    await query(sql, [hashedPassword, userId]);
   }
 }

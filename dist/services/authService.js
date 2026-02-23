@@ -64,21 +64,6 @@ class AuthService {
             return updatedUsers[0];
         });
     }
-    loginUser2(email, password) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const sql = "SELECT * FROM users WHERE email = ?";
-            const users = yield (0, db_1.query)(sql, [email]);
-            const user = users[0];
-            if (!user)
-                throw new Error("Invalid credentials");
-            const isMatch = yield bcrypt_1.default.compare(password, user.password);
-            if (!isMatch)
-                throw new Error("Invalid credentials");
-            if (!user.is_verified)
-                throw new Error("Email not verified");
-            return user;
-        });
-    }
     loginUser(email, password) {
         return __awaiter(this, void 0, void 0, function* () {
             const sql = `
@@ -107,6 +92,52 @@ class AuthService {
                 shopId: user.shop_id,
                 storeId: user.store_id,
             };
+        });
+    }
+    /**
+     * Find user by email - returns null if not found (important for security)
+     */
+    findUserByEmail(email) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = `
+    SELECT id, name, email, password, role, is_verified, verification_token
+    FROM users 
+    WHERE email = ?
+  `;
+            const users = yield (0, db_1.query)(sql, [email.trim().toLowerCase()]);
+            if (users.length === 0)
+                return null;
+            return users[0];
+        });
+    }
+    /**
+     * Find user by ID
+     */
+    findUserById(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const sql = `
+    SELECT id, name, email, password, role, is_verified
+    FROM users 
+    WHERE id = ?
+  `;
+            const users = yield (0, db_1.query)(sql, [id]);
+            if (users.length === 0)
+                return null;
+            return users[0];
+        });
+    }
+    /**
+     * Update user's password (hashes automatically via UserService)
+     */
+    updatePassword(userId, newPlainPassword) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const hashedPassword = yield user_1.UserService.hashPassword(newPlainPassword);
+            const sql = `
+    UPDATE users 
+    SET password = ?
+    WHERE id = ?
+  `;
+            yield (0, db_1.query)(sql, [hashedPassword, userId]);
         });
     }
 }

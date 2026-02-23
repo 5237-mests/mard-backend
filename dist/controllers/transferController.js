@@ -47,7 +47,7 @@ const adminTransfer = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const receiver = receivers[0];
         const message = `Transfer from ${fromId} to you has been completed. Items: ${JSON.stringify(items)}`;
         if (receiver && receiver.email) {
-            yield (0, emailService_1.sendEmail)(receiver.email, "You have received a stock transfer", message);
+            yield (0, emailService_1.sendEmail)(receiver.email, "You have received a stock transfer", message, "You have received a stock transfer");
         }
         if (receiver) {
             yield (0, notificationService_1.createNotification)(receiver.id.toString(), message);
