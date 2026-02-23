@@ -119,7 +119,7 @@ app.use("/api/balance", liveBalance_1.default);
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));
 });
-// --- Global error handler ---.
+// --- Global error handler ---
 app.use(errorHandler_1.default);
 // --- Start server ---
 app.listen(PORT, () => {
