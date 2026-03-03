@@ -132,7 +132,7 @@ export const itemTransferController = {
       const transferId = await itemTransferService.transferAllShopItemToStore(
         shopId,
         storeId,
-        user_id
+        user_id,
       );
 
       if (transferId === 0) {

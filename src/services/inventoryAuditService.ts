@@ -148,7 +148,6 @@ export const inventoryAuditService = {
       reference_id = null,
       reference_table = null,
       note = null,
-      created_by = null,
     } = input;
 
     if (quantity_in < 0 || quantity_out < 0) {
@@ -161,9 +160,8 @@ export const inventoryAuditService = {
     const sql = `
       INSERT INTO inventory_audit (
         location_type, location_id, item_id, txn_type,
-        quantity_in, quantity_out, reference_id, reference_table, note,
-        created_by, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        quantity_in, quantity_out, reference_id, reference_table, note, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `;
 
     const params = [
@@ -176,7 +174,6 @@ export const inventoryAuditService = {
       reference_id,
       reference_table,
       note,
-      created_by,
     ];
 
     const result: any = await query(sql, params);

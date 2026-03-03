@@ -119,7 +119,7 @@ const db_1 = require("../config/db");
 exports.inventoryAuditService = {
     createAudit(input) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { location_type, location_id, item_id, txn_type, quantity_in = 0, quantity_out = 0, reference_id = null, reference_table = null, note = null, created_by = null, } = input;
+            const { location_type, location_id, item_id, txn_type, quantity_in = 0, quantity_out = 0, reference_id = null, reference_table = null, note = null, } = input;
             if (quantity_in < 0 || quantity_out < 0) {
                 throw new Error("Quantities cannot be negative");
             }
@@ -129,9 +129,8 @@ exports.inventoryAuditService = {
             const sql = `
       INSERT INTO inventory_audit (
         location_type, location_id, item_id, txn_type,
-        quantity_in, quantity_out, reference_id, reference_table, note,
-        created_by, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        quantity_in, quantity_out, reference_id, reference_table, note, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `;
             const params = [
                 location_type,
@@ -143,7 +142,6 @@ exports.inventoryAuditService = {
                 reference_id,
                 reference_table,
                 note,
-                created_by,
             ];
             const result = yield (0, db_1.query)(sql, params);
             return { id: result.insertId };

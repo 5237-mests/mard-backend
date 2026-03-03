@@ -21,13 +21,13 @@ export const itemTransferService = {
   async transferAllShopItemToStore(
     shopId: number,
     storeId: number,
-    userId: number
+    userId: number,
   ): Promise<number> {
     return await transaction(async (connection) => {
       // validate shop
       const [shopRows]: any = await connection.execute(
         "SELECT 1 FROM shops WHERE id = ?",
-        [shopId]
+        [shopId],
       );
       if (!shopRows || shopRows.length === 0) {
         throw new Error("Shop not found");
@@ -36,7 +36,7 @@ export const itemTransferService = {
       // validate store
       const [storeRows]: any = await connection.execute(
         "SELECT 1 FROM stores WHERE id = ?",
-        [storeId]
+        [storeId],
       );
       if (!storeRows || storeRows.length === 0) {
         throw new Error("Store not found");
@@ -46,7 +46,7 @@ export const itemTransferService = {
       const [shopItems]: any = await connection.execute(
         // "SELECT item_id, quantity FROM shop_items WHERE shop_id = ?",
         "SELECT item_id, quantity FROM shop_items WHERE shop_id = ? AND quantity > 0",
-        [shopId]
+        [shopId],
       );
 
       if (!shopItems || shopItems.length === 0) {
@@ -58,7 +58,7 @@ export const itemTransferService = {
       const [insertResult]: any = await connection.execute(
         `INSERT INTO transfers (from_type, from_shop_id, to_type, to_store_id, created_by_id)
          VALUES (?, ?, ?, ?, ?)`,
-        ["shop", shopId, "store", storeId, userId]
+        ["shop", shopId, "store", storeId, userId],
       );
       const transferId = insertResult.insertId;
 
@@ -67,7 +67,7 @@ export const itemTransferService = {
         await connection.execute(
           `INSERT INTO transfer_items (transfer_id, item_id, quantity)
            VALUES (?, ?, ?)`,
-          [transferId, it.item_id, it.quantity]
+          [transferId, it.item_id, it.quantity],
         );
       }
 
@@ -107,7 +107,7 @@ export const itemTransferService = {
       fromType === "store"
         ? "SELECT 1 FROM store_storekeepers WHERE store_id = ? AND user_id = ?"
         : "SELECT 1 FROM shop_shopkeepers WHERE shop_id = ? AND user_id = ?",
-      [fromId, user_id]
+      [fromId, user_id],
     );
     if (!userRows || userRows.length === 0) {
       throw new Error("User not authorized for the source branch");
@@ -123,7 +123,7 @@ export const itemTransferService = {
         fromType === "store"
           ? "SELECT 1 FROM stores WHERE id = ?"
           : "SELECT 1 FROM shops WHERE id = ?",
-        [fromId]
+        [fromId],
       );
       if (!fromRows || fromRows.length === 0) {
         throw new Error(`${fromType} (from) not found`);
@@ -133,7 +133,7 @@ export const itemTransferService = {
         toType === "store"
           ? "SELECT 1 FROM stores WHERE id = ?"
           : "SELECT 1 FROM shops WHERE id = ?",
-        [toId]
+        [toId],
       );
       if (!toRows || toRows.length === 0) {
         throw new Error(`${toType} (to) not found`);
@@ -141,12 +141,12 @@ export const itemTransferService = {
 
       // validate items exist in items table
       const itemIds = Array.from(
-        new Set(items.map((it) => Number(it.item_id)))
+        new Set(items.map((it) => Number(it.item_id))),
       );
       const placeholders = itemIds.map(() => "?").join(",");
       const [existingItems]: any = await connection.execute(
         `SELECT id FROM items WHERE id IN (${placeholders})`,
-        itemIds
+        itemIds,
       );
       const existingSet = new Set((existingItems as any[]).map((r) => r.id));
       const missing = itemIds.filter((id) => !existingSet.has(id));
@@ -161,7 +161,6 @@ export const itemTransferService = {
           throw new Error(`Invalid quantity for product ${it.item_id}`);
         }
       }
-
       // generate reference and insert transfer
       const reference = `TRF-${Date.now()}-${Math.random()
         .toString(36)
@@ -169,10 +168,9 @@ export const itemTransferService = {
       const [insertResult]: any = await connection.execute(
         `INSERT INTO transfers (reference, from_type, from_${fromType}_id, to_type, to_${toType}_id, created_by_id, status)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [reference, fromType, fromId, toType, toId, user_id, "completed"]
+        [reference, fromType, fromId, toType, toId, user_id, "completed"],
       );
       const transferId = insertResult.insertId;
-
       // insert transfer_items and update inventories
       for (const it of items) {
         const itemId = Number(it.item_id);
@@ -182,7 +180,7 @@ export const itemTransferService = {
         await connection.execute(
           `INSERT INTO transfer_items (transfer_id, item_id, quantity)
            VALUES (?, ?, ?)`,
-          [transferId, itemId, qty]
+          [transferId, itemId, qty],
         );
 
         // decrement source inventory
@@ -190,32 +188,32 @@ export const itemTransferService = {
           // check available
           const [rows]: any = await connection.execute(
             "SELECT quantity FROM store_items WHERE store_id = ? AND item_id = ?",
-            [fromId, itemId]
+            [fromId, itemId],
           );
           const avail = rows && rows.length ? Number(rows[0].quantity) : 0;
           if (avail < qty) {
             throw new Error(
-              `Insufficient stock for item ${itemId} in source store`
+              `Insufficient stock for item ${itemId} in source store`,
             );
           }
           await connection.execute(
             "UPDATE store_items SET quantity = quantity - ? WHERE store_id = ? AND item_id = ?",
-            [qty, fromId, itemId]
+            [qty, fromId, itemId],
           );
         } else {
           const [rows]: any = await connection.execute(
             "SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?",
-            [fromId, itemId]
+            [fromId, itemId],
           );
           const avail = rows && rows.length ? Number(rows[0].quantity) : 0;
           if (avail < qty) {
             throw new Error(
-              `Insufficient stock for item ${itemId} in source shop`
+              `Insufficient stock for item ${itemId} in source shop`,
             );
           }
           await connection.execute(
             "UPDATE shop_items SET quantity = quantity - ? WHERE shop_id = ? AND item_id = ?",
-            [qty, fromId, itemId]
+            [qty, fromId, itemId],
           );
         }
 
@@ -225,14 +223,14 @@ export const itemTransferService = {
             `INSERT INTO store_items (store_id, item_id, quantity)
              VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
-            [toId, itemId, qty]
+            [toId, itemId, qty],
           );
         } else {
           await connection.execute(
             `INSERT INTO shop_items (shop_id, item_id, quantity)
              VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)`,
-            [toId, itemId, qty]
+            [toId, itemId, qty],
           );
         }
 
@@ -318,7 +316,7 @@ export const itemTransferService = {
            JOIN items i ON ti.item_id = i.id
            WHERE ti.transfer_id = t.id
              AND (i.name LIKE ? OR i.code LIKE ? OR i.model LIKE ?)
-         )`
+         )`,
       );
       params.push(s, s, s);
     }
@@ -435,7 +433,7 @@ export const itemTransferService = {
       // simple search across reference and branch names
       const s = `%${opts.search}%`;
       where.push(
-        "(t.reference LIKE ? OR fs.name LIKE ? OR fsh.name LIKE ? OR ts.name LIKE ? OR tsh.name LIKE ? OR CAST(t.id AS CHAR) LIKE ?)"
+        "(t.reference LIKE ? OR fs.name LIKE ? OR fsh.name LIKE ? OR ts.name LIKE ? OR tsh.name LIKE ? OR CAST(t.id AS CHAR) LIKE ?)",
       );
       params.push(s, s, s, s, s, s);
     }
@@ -535,7 +533,7 @@ export const itemTransferService = {
       LEFT JOIN users u ON t.created_by_id = u.id
       WHERE t.id = ?
       `,
-      [id]
+      [id],
     );
 
     if (!transfers.length) throw new Error("Transfer not found");
@@ -552,13 +550,13 @@ export const itemTransferService = {
        JOIN items i ON ti.item_id = i.id
        WHERE ti.transfer_id = ?
        ORDER BY ti.id ASC`,
-      [id]
+      [id],
     );
 
     const item_count = items.length;
     const total_quantity = items.reduce(
       (acc, it: any) => acc + Number(it.quantity),
-      0
+      0,
     );
     // transfers[0] now includes created_by_id / created_by_name / created_by_email
     return { ...transfers[0], item_count, total_quantity, items };
