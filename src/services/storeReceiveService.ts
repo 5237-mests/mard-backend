@@ -251,7 +251,6 @@ export const storeReceiveService = {
           [receiveId, it.item_id],
         );
         const existingRow = existingRows?.[0];
-
         // If row exists -> perform partial update based on provided keys
         if (existingRow) {
           const sets: string[] = [];
@@ -266,8 +265,7 @@ export const storeReceiveService = {
           }
 
           if (it.cost_price !== undefined) {
-            const cp =
-              it.cost_price != null ? Math.round(Number(it.cost_price)) : null;
+            const cp = it.cost_price != null ? it.cost_price : null;
             sets.push("cost_price = ?");
             params.push(cp);
           }
@@ -297,8 +295,7 @@ export const storeReceiveService = {
         if (!Number.isInteger(qty) || qty <= 0)
           throw new Error("Quantity must be a positive integer");
 
-        const costPriceValue =
-          it.cost_price != null ? Math.round(Number(it.cost_price)) : null;
+        const costPriceValue = it.cost_price;
         const noteValue = it.note ?? null;
 
         await conn.execute(

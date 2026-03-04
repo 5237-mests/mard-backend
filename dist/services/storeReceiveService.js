@@ -203,7 +203,7 @@ exports.storeReceiveService = {
                             params.push(qty);
                         }
                         if (it.cost_price !== undefined) {
-                            const cp = it.cost_price != null ? Math.round(Number(it.cost_price)) : null;
+                            const cp = it.cost_price != null ? it.cost_price : null;
                             sets.push("cost_price = ?");
                             params.push(cp);
                         }
@@ -224,7 +224,7 @@ exports.storeReceiveService = {
                     const qty = Number(it.quantity);
                     if (!Number.isInteger(qty) || qty <= 0)
                         throw new Error("Quantity must be a positive integer");
-                    const costPriceValue = it.cost_price != null ? Math.round(Number(it.cost_price)) : null;
+                    const costPriceValue = it.cost_price;
                     const noteValue = (_b = it.note) !== null && _b !== void 0 ? _b : null;
                     yield conn.execute(`INSERT INTO store_receive_items (receive_id, item_id, quantity, cost_price, note)
            VALUES (?, ?, ?, ?, ?)`, [receiveId, it.item_id, qty, costPriceValue, noteValue]);

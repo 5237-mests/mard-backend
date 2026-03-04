@@ -225,7 +225,6 @@ class storeReceiveController {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const receiveId = Number(req.params.id);
-                console.log("R ID. : ", receiveId);
                 yield storeReceiveService_1.storeReceiveService.deleteApprovedReceive(receiveId);
                 res.status(204).send();
             }

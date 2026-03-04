@@ -198,7 +198,6 @@ export class storeReceiveController {
   public static async deleteApprovedReceive(req: Request, res: Response) {
     try {
       const receiveId = Number(req.params.id);
-      console.log("R ID. : ", receiveId);
       await storeReceiveService.deleteApprovedReceive(receiveId);
       res.status(204).send();
     } catch (error: any) {
