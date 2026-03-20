@@ -44,7 +44,13 @@ class storeItemController {
         return __awaiter(this, void 0, void 0, function* () {
             const { storeId, itemId } = req.params;
             const { quantity } = req.body;
-            if (!quantity || isNaN(parseInt(quantity, 10))) {
+            // if (!quantity || isNaN(parseInt(quantity, 10))) {
+            //   res
+            //     .status(400)
+            //     .json({ message: "Quantity is required and must be a number." });
+            //   return;
+            // }
+            if (isNaN(parseInt(quantity, 10)) || quantity < 0) {
                 res
                     .status(400)
                     .json({ message: "Quantity is required and must be a number." });
