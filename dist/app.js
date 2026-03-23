@@ -40,6 +40,7 @@ const itemRequestRoutes_1 = __importDefault(require("./routes/itemRequestRoutes"
 const inventoryAuditRoutes_1 = __importDefault(require("./routes/inventoryAuditRoutes"));
 const refundRoutes_1 = __importDefault(require("./routes/refundRoutes"));
 const liveBalance_1 = __importDefault(require("./routes/liveBalance"));
+const fixedAssets_1 = __importDefault(require("./routes/fixedAssets"));
 dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
@@ -115,6 +116,7 @@ app.use("/api/item-requests", itemRequestRoutes_1.default);
 app.use("/api/inventory-audits", inventoryAuditRoutes_1.default);
 app.use("/api/refunds", refundRoutes_1.default);
 app.use("/api/balance", liveBalance_1.default);
+app.use("/api/fixed-assets", fixedAssets_1.default);
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
     res.sendFile(path_1.default.join(clientBuildPath, "index.html"));

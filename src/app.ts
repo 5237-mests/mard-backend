@@ -36,6 +36,7 @@ import itemRequestRoutes from "./routes/itemRequestRoutes";
 import inventoryAuditRoutes from "./routes/inventoryAuditRoutes";
 import refundRoutes from "./routes/refundRoutes";
 import balanceRoutes from "./routes/liveBalance";
+import fixedAssetRoutes from "./routes/fixedAssets";
 
 dotenv.config();
 connectDB();
@@ -125,6 +126,7 @@ app.use("/api/item-requests", itemRequestRoutes);
 app.use("/api/inventory-audits", inventoryAuditRoutes);
 app.use("/api/refunds", refundRoutes);
 app.use("/api/balance", balanceRoutes);
+app.use("/api/fixed-assets", fixedAssetRoutes);
 
 // --- Catch-all route for React SPA ---
 app.get("*", (req, res) => {
