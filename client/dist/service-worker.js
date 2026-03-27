@@ -1,5 +1,5 @@
 // Increment this version number when you deploy updates
-const CACHE_VERSION = "v12"; // Change this to v3, v4, etc. with each deployment
+const CACHE_VERSION = "v19"; // Change this to v3, v4, etc. with each deployment
 const CACHE_NAME = `mard-trading-cache-${CACHE_VERSION}`;
 const urlsToCache = ["/", "/index.html"];
 
@@ -13,7 +13,7 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       console.log("[SW] Caching app shell");
       return cache.addAll(urlsToCache);
-    })
+    }),
   );
 });
 
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (event) => {
         .catch(() => {
           // Fallback to cache if offline
           return caches.match(event.request);
-        })
+        }),
     );
     return;
   }
@@ -69,7 +69,7 @@ self.addEventListener("fetch", (event) => {
         });
         return response;
       });
-    })
+    }),
   );
 });
 
@@ -86,10 +86,10 @@ self.addEventListener("activate", (event) => {
               console.log("[SW] Deleting old cache:", name);
               return caches.delete(name);
             }
-          })
+          }),
         );
       });
-    })
+    }),
   );
 });
 

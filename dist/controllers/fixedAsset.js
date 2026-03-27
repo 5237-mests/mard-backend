@@ -30,16 +30,28 @@ const createFixedAsset = (req, res) => __awaiter(void 0, void 0, void 0, functio
 exports.createFixedAsset = createFixedAsset;
 const getFixedAssets = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { search } = req.query;
+        const { search, location_type, location_id } = req.query;
         const searchStr = typeof search === "string" ? search.trim().slice(0, 100) : undefined;
-        const data = yield (0, fixedAsset_1.getFixedAssetsService)(searchStr);
+        const storeType = typeof location_type === "string" ? location_type.trim() : undefined;
+        const storeId = typeof location_id === "string" && location_id
+            ? parseInt(location_id)
+            : undefined;
+        // Basic validation
+        if (storeType && !["shop", "store"].includes(storeType)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid location_type. Must be 'shop' or 'store'.",
+            });
+        }
+        const data = yield (0, fixedAsset_1.getFixedAssetsService)(searchStr, storeType, storeId);
         return res.status(200).json({
             success: true,
-            data,
+            data, // ← This is what the frontend expects
             message: data.length === 0 ? "No assets found" : undefined,
         });
     }
     catch (error) {
+        console.error("getFixedAssets error:", error);
         return res.status(500).json({
             success: false,
             message: "Failed to fetch assets",

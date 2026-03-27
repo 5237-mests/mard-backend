@@ -7,7 +7,7 @@ const router = (0, express_1.Router)();
 /**
  * POST /api/fixed-assets
  */
-router.post("/", authMiddleware_1.authenticateToken, fixedAsset_1.createFixedAsset);
+router.post("/", authMiddleware_1.authenticateToken, authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), fixedAsset_1.createFixedAsset);
 /**
  * GET /api/fixed-assets?search=laptop
  */

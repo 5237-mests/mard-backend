@@ -5,14 +5,24 @@ import {
   updateFixedAsset,
   deleteFixedAsset,
 } from "../controllers/fixedAsset";
-import { authenticateToken } from "../middleware/authMiddleware";
+import {
+  authenticateToken,
+  authorizeRole,
+  authorizeUser,
+} from "../middleware/authMiddleware";
 
 const router = Router();
 
 /**
  * POST /api/fixed-assets
  */
-router.post("/", authenticateToken, createFixedAsset);
+router.post(
+  "/",
+  authenticateToken,
+  authenticateToken,
+  authorizeRole(["ADMIN"]),
+  createFixedAsset,
+);
 
 /**
  * GET /api/fixed-assets?search=laptop
