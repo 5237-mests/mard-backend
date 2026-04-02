@@ -127,8 +127,10 @@ exports.itemTransferService = {
                         // check available
                         const [rows] = yield connection.execute("SELECT quantity FROM store_items WHERE store_id = ? AND item_id = ?", [fromId, itemId]);
                         const avail = rows && rows.length ? Number(rows[0].quantity) : 0;
+                        // get item name from items table using item id
+                        const [itemRow] = yield connection.execute("SELECT name FROM items WHERE id = ?", [itemId]);
                         if (avail < qty) {
-                            throw new Error(`Insufficient stock for item ${itemId} in source store`);
+                            throw new Error(`Insufficient stock for item [- ${itemRow[0]["name"]} -] in source store`);
                         }
                         yield connection.execute("UPDATE store_items SET quantity = quantity - ? WHERE store_id = ? AND item_id = ?", [qty, fromId, itemId]);
                     }

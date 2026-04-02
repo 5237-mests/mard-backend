@@ -47,7 +47,7 @@ const PORT = process.env.PORT || 3001;
 // --- Middleware ---
 app.use(express.json());
 
-// --- CORS configuration ---
+// --- CORS configuration ---.
 // const corsOptions = {
 //   origin: "http://localhost:8080",
 //   credentials: true,

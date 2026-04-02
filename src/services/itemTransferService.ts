@@ -191,9 +191,15 @@ export const itemTransferService = {
             [fromId, itemId],
           );
           const avail = rows && rows.length ? Number(rows[0].quantity) : 0;
+
+          // get item name from items table using item id
+          const [itemRow]: any = await connection.execute(
+            "SELECT name FROM items WHERE id = ?",
+            [itemId],
+          );
           if (avail < qty) {
             throw new Error(
-              `Insufficient stock for item ${itemId} in source store`,
+              `Insufficient stock for item [- ${itemRow[0]["name"]} -] in source store`,
             );
           }
           await connection.execute(
