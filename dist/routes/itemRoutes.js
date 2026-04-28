@@ -51,7 +51,9 @@ const upload = (0, multer_1.default)({
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
 });
 const router = express_1.default.Router();
-router.get("/all", authMiddleware_1.authenticateToken, itemController_1.default.getAllItems.bind(itemController_1.default));
+router.get("/all", 
+// authenticateToken,
+itemController_1.default.getAllItems.bind(itemController_1.default));
 router.get("/:id", authMiddleware_1.authenticateToken, itemController_1.default.getItemById.bind(itemController_1.default));
 router.post("/create", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "RECEIVER"]), upload.single("image"), //image upload
 itemController_1.default.createItem.bind(itemController_1.default));

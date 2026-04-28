@@ -49,7 +49,7 @@ const router = express.Router();
 
 router.get(
   "/all",
-  authenticateToken,
+  // authenticateToken,
   itemController.getAllItems.bind(itemController),
 );
 

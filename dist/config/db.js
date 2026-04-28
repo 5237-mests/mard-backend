@@ -45,7 +45,7 @@ const getDatabaseConfig = () => {
  */
 exports.pool = promise_1.default.createPool(Object.assign(Object.assign({}, getDatabaseConfig()), { waitForConnections: true, connectionLimit: 10, queueLimit: 0 }));
 /**
- * DB connection tester with retries (for app startup).
+ * DB connection tester with retries (for app startup)
  */
 const connectDB = (...args_1) => __awaiter(void 0, [...args_1], void 0, function* (retries = 3, delay = 3000) {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -56,7 +56,7 @@ const connectDB = (...args_1) => __awaiter(void 0, [...args_1], void 0, function
             return;
         }
         catch (error) {
-            logger_1.default.error(`DB connection attempt ${attempt} failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+            logger_1.default.error(`DB connection attempt* ${attempt} failed: ${error instanceof Error ? error.message : "Unknown error"}`);
             if (attempt === retries) {
                 logger_1.default.error("Max retries reached. Exiting...");
                 process.exit(1);

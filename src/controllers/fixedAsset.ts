@@ -45,9 +45,10 @@ export const getFixedAssets = async (req: Request, res: Response) => {
     }
 
     const data = await getFixedAssetsService(searchStr, storeType, storeId);
-
+    const total_asset_cost = data.reduce((acc, curr) => acc + curr.cost, 0);
     return res.status(200).json({
       success: true,
+      total_asset_cost,
       data, // ← This is what the frontend expects
       message: data.length === 0 ? "No assets found" : undefined,
     });

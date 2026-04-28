@@ -5,14 +5,18 @@ import { authenticateToken, authorizeRole } from "../middleware/authMiddleware";
 const router = express.Router();
 
 // Route to get all categories
-router.get("/all", authenticateToken, categoryController.getAllCategories);
+router.get(
+  "/all",
+  // authenticateToken,
+  categoryController.getAllCategories,
+);
 
 // Route to create a new category
 router.post(
   "/",
   authenticateToken,
   authorizeRole(["ADMIN"]),
-  categoryController.createCategory
+  categoryController.createCategory,
 );
 
 // Route to get a category by ID
@@ -23,7 +27,7 @@ router.put(
   "/:id",
   authenticateToken,
   authorizeRole(["ADMIN"]),
-  categoryController.updateCategory
+  categoryController.updateCategory,
 );
 
 // Route to delete a category by ID
@@ -31,7 +35,7 @@ router.delete(
   "/:id",
   authenticateToken,
   authorizeRole(["ADMIN"]),
-  categoryController.deleteCategory
+  categoryController.deleteCategory,
 );
 
 export default router;

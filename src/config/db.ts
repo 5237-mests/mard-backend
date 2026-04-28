@@ -42,7 +42,7 @@ export const pool = mysql.createPool({
 });
 
 /**
- * DB connection tester with retries (for app startup).
+ * DB connection tester with retries (for app startup)
  */
 const connectDB = async (retries = 3, delay = 3000): Promise<void> => {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -51,15 +51,15 @@ const connectDB = async (retries = 3, delay = 3000): Promise<void> => {
       logger.info(
         `MySQL Connected: ${getDatabaseConfig().host}:${
           getDatabaseConfig().port
-        }`
+        }`,
       );
       connection.release();
       return;
     } catch (error) {
       logger.error(
-        `DB connection attempt ${attempt} failed: ${
+        `DB connection attempt* ${attempt} failed: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
       if (attempt === retries) {
         logger.error("Max retries reached. Exiting...");
@@ -75,7 +75,7 @@ const connectDB = async (retries = 3, delay = 3000): Promise<void> => {
  */
 export const query = async <T = any[]>(
   sql: string,
-  params?: any[]
+  params?: any[],
 ): Promise<T> => {
   try {
     const [results] = await pool.execute(sql, params);
@@ -90,7 +90,7 @@ export const query = async <T = any[]>(
  * Transaction helper — safely handles rollback & release.
  */
 export const transaction = async <T>(
-  callback: (connection: mysql.PoolConnection) => Promise<T>
+  callback: (connection: mysql.PoolConnection) => Promise<T>,
 ): Promise<T> => {
   const connection = await pool.getConnection();
   try {
