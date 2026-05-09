@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLiveBalancePivot = void 0;
+exports.getLiveBalancePivot2 = exports.getLiveBalancePivot = void 0;
 const db_1 = require("../config/db");
 const getLiveBalancePivot = (search) => __awaiter(void 0, void 0, void 0, function* () {
     const searchQuery = search ? `%${search}%` : null;
@@ -126,3 +126,104 @@ const getLiveBalancePivot = (search) => __awaiter(void 0, void 0, void 0, functi
     };
 });
 exports.getLiveBalancePivot = getLiveBalancePivot;
+const getLiveBalancePivot2 = (search, category_id) => __awaiter(void 0, void 0, void 0, function* () {
+    const searchQuery = search ? `%${search}%` : null;
+    /* ================= FETCH LOCATIONS ================= */
+    const shops = yield (0, db_1.query)(`SELECT id, name FROM shops ORDER BY id`);
+    const stores = yield (0, db_1.query)(`SELECT id, name FROM stores ORDER BY id`);
+    /* ================= DYNAMIC PIVOT COLUMNS ================= */
+    const shopPivotCols = shops.length > 0
+        ? shops
+            .map((s) => `SUM(CASE WHEN shop_id = ${s.id} THEN quantity ELSE 0 END) AS shop_${s.id}`)
+            .join(",")
+        : "0 AS shop_dummy";
+    const storePivotCols = stores.length > 0
+        ? stores
+            .map((s) => `SUM(CASE WHEN store_id = ${s.id} THEN quantity ELSE 0 END) AS store_${s.id}`)
+            .join(",")
+        : "0 AS store_dummy";
+    const shopPivotSQL = `SELECT item_id, ${shopPivotCols} FROM shop_items GROUP BY item_id`;
+    const storePivotSQL = `SELECT item_id, ${storePivotCols} FROM store_items GROUP BY item_id`;
+    /* ================= TOTAL QUANTITY ================= */
+    const totalExpr = [
+        ...shops.map((s) => `COALESCE(sp.shop_${s.id}, 0)`),
+        ...stores.map((s) => `COALESCE(st.store_${s.id}, 0)`),
+    ].join(" + ") || "0";
+    /* ================= BUILD WHERE CLAUSE CORRECTLY ================= */
+    let whereClause = "";
+    const params = [];
+    const hasSearch = !!searchQuery;
+    const hasCategory = category_id !== undefined && category_id !== 0 && category_id !== null;
+    if (hasSearch || hasCategory) {
+        whereClause = "WHERE ";
+        if (hasSearch) {
+            whereClause += `(i.name LIKE ? OR i.code LIKE ? OR i.model LIKE ?)`;
+            params.push(searchQuery, searchQuery, searchQuery);
+        }
+        if (hasSearch && hasCategory) {
+            whereClause += " AND ";
+        }
+        if (hasCategory) {
+            whereClause += `i.category_id = ?`;
+            params.push(category_id);
+        }
+    }
+    /* ================= MAIN SQL ================= */
+    const sql = `
+    SELECT
+      i.id AS item_id,
+      TRIM(i.name) AS name,
+      i.code,
+      i.model,
+      i.image,
+      COALESCE(i.price, 0) AS price,
+      ${shops.length > 0
+        ? shops
+            .map((s) => `COALESCE(sp.shop_${s.id}, 0) AS shop_${s.id}`)
+            .join(",")
+        : ""}
+      ${stores.length > 0
+        ? "," +
+            stores
+                .map((s) => `COALESCE(st.store_${s.id}, 0) AS store_${s.id}`)
+                .join(",")
+        : ""},
+      (${totalExpr}) AS total_quantity
+
+    FROM items i
+    LEFT JOIN (${shopPivotSQL}) sp ON sp.item_id = i.id
+    LEFT JOIN (${storePivotSQL}) st ON st.item_id = i.id
+
+    ${whereClause}
+
+    ORDER BY total_quantity DESC, i.name ASC
+  `;
+    /* ================= EXECUTE ================= */
+    const rawItems = yield (0, db_1.query)(sql, params);
+    /* ================= PROCESS RESULTS ================= */
+    const items = rawItems.map((item) => {
+        const converted = Object.assign(Object.assign({}, item), { price: Number(item.price || 0), total_quantity: Number(item.total_quantity || 0) });
+        Object.keys(item).forEach((key) => {
+            var _a;
+            if (key.startsWith("shop_") || key.startsWith("store_")) {
+                converted[key] = Number((_a = item[key]) !== null && _a !== void 0 ? _a : 0);
+            }
+        });
+        return converted;
+    });
+    const filteredItems = items.map((i) => ({
+        item_id: i.item_id,
+        name: i.name,
+        code: i.code,
+        model: i.model,
+        image: i.image,
+        price: i.price,
+        total_quantity: i.total_quantity,
+    }));
+    return {
+        total_distinct_items: filteredItems.length,
+        total_number_of_items: filteredItems.reduce((sum, i) => sum + i.total_quantity, 0),
+        data: filteredItems,
+    };
+});
+exports.getLiveBalancePivot2 = getLiveBalancePivot2;

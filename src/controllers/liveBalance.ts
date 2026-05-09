@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
-import { getLiveBalancePivot } from "../services/liveBalance";
+import {
+  getLiveBalancePivot,
+  getLiveBalancePivot2,
+} from "../services/liveBalance";
 
 interface Location {
   id: number;
@@ -48,7 +51,6 @@ export const liveBalancePivot = async (req: Request, res: Response) => {
       typeof search === "string" ? search.trim().slice(0, 100) : undefined;
 
     const result: ServiceResult = await getLiveBalancePivot(searchStr);
-
     if (!result || !Array.isArray(result.data) || result.data.length === 0) {
       return res.status(200).json({
         success: true,
@@ -67,6 +69,50 @@ export const liveBalancePivot = async (req: Request, res: Response) => {
       total_number_of_items: result.total_number_of_items,
       total_asset_valuation: Number(result.total_asset_valuation.toFixed(2)),
       locations: result.locations,
+      data: result.data,
+    };
+
+    return res.status(200).json(response);
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch live balance",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+export const liveBalancePivot2 = async (req: Request, res: Response) => {
+  try {
+    const { search, category_id } = req.query;
+
+    // Basic sanitization
+    const categoryIdNum =
+      typeof category_id === "string" && !isNaN(Number(category_id))
+        ? Number(category_id)
+        : undefined;
+
+    const searchStr =
+      typeof search === "string" ? search.trim().slice(0, 100) : undefined;
+
+    const result: Partial<ServiceResult> = await getLiveBalancePivot2(
+      searchStr,
+      categoryIdNum,
+    );
+    if (!result || !Array.isArray(result.data) || result.data.length === 0) {
+      return res.status(200).json({
+        success: true,
+        total_distinct_items: 0,
+        total_number_of_items: 0,
+        data: [],
+        message: "No data available",
+      });
+    }
+
+    const response: Partial<ApiResponse> = {
+      success: true,
+      total_distinct_items: result.total_distinct_items,
+      total_number_of_items: result.total_number_of_items,
       data: result.data,
     };
 

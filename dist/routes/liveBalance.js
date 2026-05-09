@@ -10,4 +10,5 @@ const router = (0, express_1.Router)();
  *   search=cement
  */
 router.get("/live", authMiddleware_1.authenticateToken, liveBalance_1.liveBalancePivot);
+router.get("/live2", liveBalance_1.liveBalancePivot2);
 exports.default = router;

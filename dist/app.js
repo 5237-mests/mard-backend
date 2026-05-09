@@ -10,7 +10,7 @@ const path_1 = __importDefault(require("path"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
-// --- Import routes ---
+// --- Import routes ---.
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
@@ -47,7 +47,7 @@ const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
 // --- Middleware ---
 app.use(express_1.default.json());
-// --- CORS configuration ---.
+// --- CORS configuration
 // const corsOptions = {
 //   origin: "http://localhost:8080",
 //   credentials: true,

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { liveBalancePivot } from "../controllers/liveBalance";
+import { liveBalancePivot, liveBalancePivot2 } from "../controllers/liveBalance";
 import { authenticateToken } from "../middleware/authMiddleware";
 
 const router = Router();
@@ -10,5 +10,6 @@ const router = Router();
  *   search=cement
  */
 router.get("/live", authenticateToken, liveBalancePivot);
+router.get("/live2", liveBalancePivot2);
 
 export default router;
