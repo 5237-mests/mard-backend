@@ -7,10 +7,11 @@ const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 // import cors from "cors";
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const db_1 = __importDefault(require("./config/db"));
 const logger_1 = __importDefault(require("./config/logger"));
 const errorHandler_1 = __importDefault(require("./lib/errorHandler"));
-// --- Import routes ---.
+// --- Import routes ---
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
@@ -45,14 +46,16 @@ dotenv_1.default.config();
 (0, db_1.default)();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3001;
-// --- Middleware ---
+// --- Middleware --
 app.use(express_1.default.json());
-// --- CORS configuration
+// --- CORS configuration.
 // const corsOptions = {
 //   origin: "http://localhost:8080",
 //   credentials: true,
 // };
 // app.use(cors(corsOptions));
+// --- Cookie parser (for HttpOnly refresh tokens)
+app.use((0, cookie_parser_1.default)());
 // --- Static files (Vite build) ---
 const clientBuildPath = path_1.default.join(__dirname, "../client/dist");
 app.use(express_1.default.static(clientBuildPath, {
@@ -86,7 +89,7 @@ app.use(express_1.default.static(clientBuildPath, {
 }));
 // --- Serve uploads ---
 app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
-// --- API Routes ---
+// --- API Routes ---..
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/users", userRoutes_1.default);
 app.use("/api/brands", brandRoutes_1.default);

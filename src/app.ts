@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-import cors from "cors";
+// import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db";
 import logger from "./config/logger";
@@ -49,11 +49,11 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 
 // --- CORS configuration.
-const corsOptions = {
-  origin: "http://localhost:8080",
-  credentials: true,
-};
-app.use(cors(corsOptions));
+// const corsOptions = {
+//   origin: "http://localhost:8080",
+//   credentials: true,
+// };
+// app.use(cors(corsOptions));
 
 // --- Cookie parser (for HttpOnly refresh tokens)
 app.use(cookieParser());

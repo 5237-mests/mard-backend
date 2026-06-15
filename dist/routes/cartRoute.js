@@ -42,7 +42,7 @@ router.get("/", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUs
 router.put("/", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, cartController.updateItem);
 // remove item from cart
 router.delete("/:itemId", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, cartController.removeItem);
-// clear carts
+// clear carts.
 router.delete("/", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, cartController.clearCart);
 router.post("/increment/:item_id", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, cartController.incrementItem);
 router.post("/decrement/:item_id", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, cartController.decrementItem);

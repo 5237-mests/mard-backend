@@ -11,6 +11,7 @@ router.post("/register", authController_1.default.register);
 router.get("/verify-email", authController_1.default.verifyEmail);
 // User login route (returns JWT only)
 router.post("/login", authController_1.default.login);
+router.post("/refresh", authController_1.default.refreshToken);
 // User logout route (for JWT, this is a client-side operation)
 router.post("/logout", authController_1.default.logout);
 router.post("/forgot-password", authController_1.default.forgotPassword);

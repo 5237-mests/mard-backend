@@ -12,9 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.decrementCartItem = exports.incrementCartItem = exports.clearCart = exports.removeCartItem = exports.updateCartItem = exports.getCartByUser = exports.getCartByUser0 = exports.addToCart = exports.addToCart0 = void 0;
+exports.decrementCartItem = exports.incrementCartItem = exports.clearCart = exports.removeCartItem = exports.updateCartItem = exports.getCartByUser = exports.addToCart = exports.addToCart0 = exports.getAvailableStock = void 0;
 const db_1 = require("../config/db");
 const AppError_1 = __importDefault(require("../utils/AppError"));
+const getAvailableStock = (itemId) => __awaiter(void 0, void 0, void 0, function* () {
+    const [rows] = yield (0, db_1.query)(`
+    SELECT SUM(quantity) AS available_stock
+    FROM (
+        SELECT quantity FROM shop_items WHERE item_id = ?
+        UNION ALL
+        SELECT quantity FROM store_items WHERE item_id = ?
+    ) stocks
+    `, [itemId, itemId]);
+    return rows.available_stock || 0;
+});
+exports.getAvailableStock = getAvailableStock;
 // Add item to cart (create cart if not exists)
 const addToCart0 = (item, user_id) => __awaiter(void 0, void 0, void 0, function* () {
     return yield (0, db_1.transaction)((conn) => __awaiter(void 0, void 0, void 0, function* () {
@@ -42,12 +54,9 @@ exports.addToCart0 = addToCart0;
 const addToCart = (item, user_id) => __awaiter(void 0, void 0, void 0, function* () {
     return yield (0, db_1.transaction)((conn) => __awaiter(void 0, void 0, void 0, function* () {
         // 1. Check stock availability in shop_items
-        const [stockRows] = yield conn.query("SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?", [2, item.item_id]);
-        if (stockRows.length === 0) {
-            throw new AppError_1.default(`Item ${item.item_id} not found in shop`, 404);
-        }
-        if (stockRows[0].quantity < item.quantity) {
-            throw new AppError_1.default(`Insufficient stock for item ${item.item_id}. Available: ${stockRows[0].quantity}, Requested: ${item.quantity}`, 400);
+        const availableStock = yield (0, exports.getAvailableStock)(item.item_id);
+        if (availableStock < item.quantity) {
+            throw new AppError_1.default(`Insufficient stock for item ${item.item_id}. Available: ${availableStock}, Requested: ${item.quantity}`, 400);
         }
         // 2. Check if user already has a cart
         const [cartRows] = yield conn.query("SELECT id FROM carts WHERE user_id = ?", [user_id]);
@@ -70,33 +79,6 @@ const addToCart = (item, user_id) => __awaiter(void 0, void 0, void 0, function*
     }));
 });
 exports.addToCart = addToCart;
-const getCartByUser0 = (userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const sql = `
-    SELECT c.id AS cart_id, c.user_id, 
-           ci.item_id, ci.quantity, 
-           p.name, p.price
-    FROM carts c
-    JOIN cart_items ci ON c.id = ci.cart_id
-    JOIN items p ON ci.item_id = p.id
-    WHERE c.user_id = ?
-  `;
-    const rows = yield (0, db_1.query)(sql, [userId]);
-    if (rows.length === 0) {
-        return []; // no cart found
-    }
-    // Build nested object
-    return {
-        id: rows[0].cart_id,
-        user_id: rows[0].user_id,
-        items: rows.map((row) => ({
-            item_id: row.item_id,
-            name: row.name,
-            price: row.price,
-            quantity: row.quantity,
-        })),
-    };
-});
-exports.getCartByUser0 = getCartByUser0;
 const getCartByUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const sql = `
     SELECT 
@@ -175,7 +157,7 @@ const removeCartItem = (userId, itemId) => __awaiter(void 0, void 0, void 0, fun
     return { message: "Cart item removed" };
 });
 exports.removeCartItem = removeCartItem;
-// clear cart
+// clear cart.
 const clearCart = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const sql = `
     DELETE ci FROM cart_items ci
@@ -188,31 +170,37 @@ const clearCart = (userId) => __awaiter(void 0, void 0, void 0, function* () {
 exports.clearCart = clearCart;
 // Increment item by +1
 const incrementCartItem = (userId, itemId) => __awaiter(void 0, void 0, void 0, function* () {
-    // 1. Check stock availability
-    const [stockRows] = yield (0, db_1.query)("SELECT quantity FROM shop_items WHERE shop_id = ? AND item_id = ?", [2, itemId]);
-    if (stockRows.length === 0) {
-        throw new AppError_1.default("Item not found", 404);
+    // 1. Get total available stock
+    const availableStock = yield (0, exports.getAvailableStock)(itemId);
+    if (availableStock <= 0) {
+        throw new AppError_1.default("Item is out of stock", 404);
     }
-    const availableStock = stockRows.quantity;
     // 2. Get current cart quantity
-    const [cartRows] = yield (0, db_1.query)(`SELECT ci.quantity 
-     FROM cart_items ci
-     JOIN carts c ON ci.cart_id = c.id
-     WHERE c.user_id = ? AND ci.item_id = ?`, [userId, itemId]);
+    const [cartRows] = yield (0, db_1.query)(`
+    SELECT ci.quantity
+    FROM cart_items ci
+    JOIN carts c ON ci.cart_id = c.id
+    WHERE c.user_id = ?
+      AND ci.item_id = ?
+    `, [userId, itemId]);
+    if (cartRows.length === 0) {
+        throw new AppError_1.default("Item not found in cart", 404);
+    }
     const currentCartQty = cartRows.quantity;
     // 3. Validate stock
     if (currentCartQty + 1 > availableStock) {
-        throw new AppError_1.default(`Insufficient stock for item ${itemId}. Available: ${availableStock}, Requested: ${currentCartQty + 1}`, 400);
+        throw new AppError_1.default(`Insufficient stock. Available: ${availableStock}, Requested: ${currentCartQty + 1}`, 400);
     }
-    // 4. Update quantity
-    const sql = `
+    // 4. Increment quantity
+    yield (0, db_1.query)(`
     UPDATE cart_items ci
     JOIN carts c ON ci.cart_id = c.id
     SET ci.quantity = ci.quantity + 1
-    WHERE c.user_id = ? AND ci.item_id = ?
-  `;
-    yield (0, db_1.query)(sql, [userId, itemId]);
-    return (0, exports.getCartByUser)(userId); // return updated cart
+    WHERE c.user_id = ?
+      AND ci.item_id = ?
+    `, [userId, itemId]);
+    // 5. Return updated cart
+    return (0, exports.getCartByUser)(userId);
 });
 exports.incrementCartItem = incrementCartItem;
 // Decrement item by -1 (remove if reaches 0)

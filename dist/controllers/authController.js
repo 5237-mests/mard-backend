@@ -70,14 +70,40 @@ class AuthController {
             const authService = new authService_1.AuthService();
             try {
                 const user = yield authService.loginUser(email, password);
-                // Generate JWT
-                const token = require("jsonwebtoken").sign({ user }, process.env.JWT_SECRET || "default_secret", { expiresIn: "7d" });
-                res.status(200).json({
-                    token,
+                // Generate short-lived access token (15 minutes)
+                const accessToken = jsonwebtoken_1.default.sign({
+                    userId: user.id,
                     user: {
+                        id: user.id,
                         name: user.name,
                         email: user.email,
                         role: user.role,
+                        shopId: user.shopId,
+                        storeId: user.storeId,
+                    },
+                }, process.env.JWT_SECRET || "default_secret", { expiresIn: "180m" });
+                // Generate long-lived refresh token (7 days).
+                const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET || "refresh_secret", { expiresIn: "7d" });
+                // Set HttpOnly refresh token cookie
+                res.cookie("refreshToken", refreshToken, {
+                    httpOnly: true,
+                    // secure: process.env.NODE_ENV === "production",
+                    secure: true, // For development, set to true for HTTPS
+                    // sameSite: "strict",
+                    sameSite: "none", // Adjusted for cross-origin requests
+                    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                    path: "/",
+                });
+                // Return access token in response body
+                res.status(200).json({
+                    accessToken,
+                    user: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                        shopId: user.shopId,
+                        storeId: user.storeId,
                     },
                 });
             }
@@ -88,12 +114,62 @@ class AuthController {
     }
     logout(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Invalidate the token on the client-side, no server-side action needed
+            // Clear the refresh token cookie
+            res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                path: "/",
+            });
             res.status(200).json({ message: "Logged out successfully" });
         });
     }
+    // Refresh access token using HttpOnly refresh token cookie
+    refreshToken(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            try {
+                const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refreshToken;
+                if (!refreshToken) {
+                    return res.status(401).json({ message: "No refresh token found" });
+                }
+                const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || "refresh_secret");
+                const authService = new authService_1.AuthService();
+                const user = yield authService.findUserById(decoded.userId);
+                if (!user)
+                    return res.status(401).json({ message: "User not found" });
+                // Generate new access token
+                const newAccessToken = jsonwebtoken_1.default.sign({
+                    userId: user.id,
+                    user: {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                        shopId: user.shopId,
+                        storeId: user.storeId,
+                    },
+                }, process.env.JWT_SECRET || "default_secret", { expiresIn: "15m" });
+                // Rotate refresh token (optional but recommended).
+                const newRefreshToken = jsonwebtoken_1.default.sign({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET || "refresh_secret", { expiresIn: "7d" });
+                res.cookie("refreshToken", newRefreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "strict",
+                    maxAge: 7 * 24 * 60 * 60 * 1000,
+                    path: "/",
+                });
+                return res.json({ accessToken: newAccessToken });
+            }
+            catch (error) {
+                return res
+                    .status(401)
+                    .json({ message: error.message || "Invalid refresh token" });
+            }
+        });
+    }
     // ──────────────────────────────────────────────
-    // Forgot Password – send reset link
+    // Forgot Password – send reset link.
     // ──────────────────────────────────────────────
     forgotPassword(req, res) {
         return __awaiter(this, void 0, void 0, function* () {

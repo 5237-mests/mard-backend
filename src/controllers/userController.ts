@@ -77,7 +77,7 @@ class UserController {
 
   public async updateUserProfile(
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> {
     try {
       const userId = req.params.id;
@@ -95,14 +95,14 @@ class UserController {
 
   public async updateUserPassword(
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<Response> {
     try {
       const userId = req.params.id;
       const { newPassword } = req.body;
       const updatedUser = await this.userService.updateUserPassword(
         userId,
-        newPassword
+        newPassword,
       );
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });

@@ -130,7 +130,6 @@ const removeItem = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const { itemId } = req.params;
         const userId = Number((_b = (_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
-        console.log(userId, Number(itemId));
         yield cartService.removeCartItem(userId, Number(itemId));
         res.json({ message: "Cart item removed" });
     }

@@ -85,10 +85,10 @@ class AuthController {
           },
         },
         process.env.JWT_SECRET || "default_secret",
-        { expiresIn: "15m" },
+        { expiresIn: "180m" },
       );
 
-      // Generate long-lived refresh token (7 days)
+      // Generate long-lived refresh token (7 days).
       const refreshToken = jwt.sign(
         { userId: user.id },
         process.env.REFRESH_TOKEN_SECRET || "refresh_secret",
@@ -96,7 +96,6 @@ class AuthController {
       );
 
       // Set HttpOnly refresh token cookie
-      console.log("login: about to set refresh cookie for user", user.email);
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         // secure: process.env.NODE_ENV === "production",
@@ -106,7 +105,6 @@ class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       });
-      console.log("login: set-cookie header:", res.getHeader?.("Set-Cookie"));
       // Return access token in response body
       res.status(200).json({
         accessToken,
@@ -139,9 +137,7 @@ class AuthController {
   // Refresh access token using HttpOnly refresh token cookie
   async refreshToken(req: Request, res: Response) {
     try {
-      console.log("req cookies: ", req.cookies);
       const refreshToken = req.cookies?.refreshToken;
-      console.log("ref tok: ", refreshToken);
       if (!refreshToken) {
         return res.status(401).json({ message: "No refresh token found" });
       }
@@ -153,7 +149,6 @@ class AuthController {
 
       const authService = new AuthService();
       const user = await authService.findUserById(decoded.userId);
-      console.log("deco- ", decoded);
 
       if (!user) return res.status(401).json({ message: "User not found" });
 
@@ -174,7 +169,7 @@ class AuthController {
         { expiresIn: "15m" },
       );
 
-      // Rotate refresh token (optional but recommended)
+      // Rotate refresh token (optional but recommended).
       const newRefreshToken = jwt.sign(
         { userId: user.id },
         process.env.REFRESH_TOKEN_SECRET || "refresh_secret",
@@ -198,7 +193,7 @@ class AuthController {
   }
 
   // ──────────────────────────────────────────────
-  // Forgot Password – send reset link
+  // Forgot Password – send reset link.
   // ──────────────────────────────────────────────
   async forgotPassword(req: Request, res: Response) {
     const { email } = req.body;
