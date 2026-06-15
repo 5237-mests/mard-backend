@@ -70,18 +70,53 @@ class AuthController {
     const authService = new AuthService();
     try {
       const user = await authService.loginUser(email, password);
-      // Generate JWT
-      const token = require("jsonwebtoken").sign(
-        { user },
+
+      // Generate short-lived access token (15 minutes)
+      const accessToken = jwt.sign(
+        {
+          userId: user.id,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            shopId: user.shopId,
+            storeId: user.storeId,
+          },
+        },
         process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "15m" },
+      );
+
+      // Generate long-lived refresh token (7 days)
+      const refreshToken = jwt.sign(
+        { userId: user.id },
+        process.env.REFRESH_TOKEN_SECRET || "refresh_secret",
         { expiresIn: "7d" },
       );
+
+      // Set HttpOnly refresh token cookie
+      console.log("login: about to set refresh cookie for user", user.email);
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        // secure: process.env.NODE_ENV === "production",
+        secure: true, // For development, set to true for HTTPS
+        // sameSite: "strict",
+        sameSite: "none", // Adjusted for cross-origin requests
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
+      });
+      console.log("login: set-cookie header:", res.getHeader?.("Set-Cookie"));
+      // Return access token in response body
       res.status(200).json({
-        token,
+        accessToken,
         user: {
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
+          shopId: user.shopId,
+          storeId: user.storeId,
         },
       });
     } catch (error: any) {
@@ -90,8 +125,76 @@ class AuthController {
   }
 
   async logout(req: Request, res: Response) {
-    // Invalidate the token on the client-side, no server-side action needed
+    // Clear the refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
     res.status(200).json({ message: "Logged out successfully" });
+  }
+
+  // Refresh access token using HttpOnly refresh token cookie
+  async refreshToken(req: Request, res: Response) {
+    try {
+      console.log("req cookies: ", req.cookies);
+      const refreshToken = req.cookies?.refreshToken;
+      console.log("ref tok: ", refreshToken);
+      if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token found" });
+      }
+
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET || "refresh_secret",
+      ) as any;
+
+      const authService = new AuthService();
+      const user = await authService.findUserById(decoded.userId);
+      console.log("deco- ", decoded);
+
+      if (!user) return res.status(401).json({ message: "User not found" });
+
+      // Generate new access token
+      const newAccessToken = jwt.sign(
+        {
+          userId: user.id,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            shopId: (user as any).shopId,
+            storeId: (user as any).storeId,
+          },
+        },
+        process.env.JWT_SECRET || "default_secret",
+        { expiresIn: "15m" },
+      );
+
+      // Rotate refresh token (optional but recommended)
+      const newRefreshToken = jwt.sign(
+        { userId: user.id },
+        process.env.REFRESH_TOKEN_SECRET || "refresh_secret",
+        { expiresIn: "7d" },
+      );
+
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
+      });
+
+      return res.json({ accessToken: newAccessToken });
+    } catch (error: any) {
+      return res
+        .status(401)
+        .json({ message: error.message || "Invalid refresh token" });
+    }
   }
 
   // ──────────────────────────────────────────────

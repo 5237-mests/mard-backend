@@ -1,12 +1,13 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-// import cors from "cors";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 import connectDB from "./config/db";
 import logger from "./config/logger";
 import errorHandler from "./lib/errorHandler";
 
-// --- Import routes ---.
+// --- Import routes ---
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import healthRoutes from "./routes/healthRoutes";
@@ -44,15 +45,18 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// --- Middleware ---
+// --- Middleware --
 app.use(express.json());
 
-// --- CORS configuration
-// const corsOptions = {
-//   origin: "http://localhost:8080",
-//   credentials: true,
-// };
-// app.use(cors(corsOptions));
+// --- CORS configuration.
+const corsOptions = {
+  origin: "http://localhost:8080",
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
+// --- Cookie parser (for HttpOnly refresh tokens)
+app.use(cookieParser());
 
 // --- Static files (Vite build) ---
 const clientBuildPath = path.join(__dirname, "../client/dist");
@@ -96,7 +100,7 @@ app.use(
   ),
 );
 
-// --- API Routes ---
+// --- API Routes ---..
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/brands", brandroutes);

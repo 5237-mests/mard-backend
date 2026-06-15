@@ -9,6 +9,7 @@ router.get("/verify-email", AuthController.verifyEmail);
 
 // User login route (returns JWT only)
 router.post("/login", AuthController.login);
+router.post("/refresh", AuthController.refreshToken);
 
 // User logout route (for JWT, this is a client-side operation)
 router.post("/logout", AuthController.logout);

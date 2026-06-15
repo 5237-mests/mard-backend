@@ -31,7 +31,7 @@ export const addItem1 = async (req: Request, res: Response) => {
 export const addItem = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const userId = Number(req.user?.user?.id);
@@ -75,7 +75,7 @@ export const updateItem = async (req: Request, res: Response) => {
     const data = await cartService.updateCartItem(
       userId,
       Number(item_id),
-      Number(quantity)
+      Number(quantity),
     );
     res.json({ message: "Cart item updated", data });
   } catch (error) {
@@ -87,7 +87,6 @@ export const removeItem = async (req: Request, res: Response) => {
   try {
     const { itemId } = req.params;
     const userId = Number(req?.user?.user?.id);
-    console.log(userId, Number(itemId));
     await cartService.removeCartItem(userId, Number(itemId));
     res.json({ message: "Cart item removed" });
   } catch (error) {
@@ -113,7 +112,7 @@ export const incrementItem = async (req: Request, res: Response) => {
     const user_id = req?.user?.user.id;
     const result = await cartService.incrementCartItem(
       Number(user_id),
-      Number(item_id)
+      Number(item_id),
     );
     res.json(result);
   } catch (err: any) {
@@ -128,7 +127,7 @@ export const decrementItem = async (req: Request, res: Response) => {
     const user_id = req?.user?.user.id;
     const result = await cartService.decrementCartItem(
       Number(user_id),
-      Number(item_id)
+      Number(item_id),
     );
     res.json(result);
   } catch (err: any) {

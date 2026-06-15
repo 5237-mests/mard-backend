@@ -14,23 +14,23 @@ router.delete(
   "/:itemId",
   authenticateToken,
   authorizeUser,
-  cartController.removeItem
+  cartController.removeItem,
 );
 
-// clear carts
+// clear carts.
 router.delete("/", authenticateToken, authorizeUser, cartController.clearCart);
 
 router.post(
   "/increment/:item_id",
   authenticateToken,
   authorizeUser,
-  cartController.incrementItem
+  cartController.incrementItem,
 );
 router.post(
   "/decrement/:item_id",
   authenticateToken,
   authorizeUser,
-  cartController.decrementItem
+  cartController.decrementItem,
 );
 
 export default router;
