@@ -223,13 +223,15 @@ const getOrderById1 = (orderId) => __awaiter(void 0, void 0, void 0, function* (
 exports.getOrderById1 = getOrderById1;
 const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* () {
     // Fetch order details with item names and current prices
+    // include user details
     const sql = `
-    SELECT o.id as order_id, o.delivery_details, o.payment_receipt, o.created_at, o.status,
+    SELECT o.id as order_id, retailer_id, u.name, u.email, u.phone, o.delivery_details, o.payment_receipt, o.created_at, o.status,
            i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     JOIN items i ON oi.item_id = i.id
+    JOIN users u ON o.retailer_id = u.id
     WHERE o.id = ?
   `;
     const rows = yield (0, db_1.query)(sql, [orderId]);
@@ -241,7 +243,13 @@ const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* ()
         payment_receipt: rows[0].payment_receipt,
         created_at: rows[0].created_at,
         status: rows[0].status,
-        total_amount: 0, // Remap and rename for frontend
+        total_amount: 0,
+        customer: {
+            id: rows[0].retailer_id,
+            name: rows[0].name,
+            email: rows[0].email,
+            phone: rows[0].phone,
+        },
         items: [],
     };
     rows.forEach((row) => {
