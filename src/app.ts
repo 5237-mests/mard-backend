@@ -99,6 +99,12 @@ app.use(
     path.join(process.env.HOME || "/home/mardtryj", "uploads/products"),
   ),
 );
+app.use(
+  "/uploads/receipts",
+  express.static(
+    path.join(process.env.HOME || "/home/mardtryj", "uploads/receipts"),
+  ),
+);
 
 // --- API Routes ---..
 app.use("/api/auth", authRoutes);

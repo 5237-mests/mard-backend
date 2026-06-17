@@ -16,15 +16,20 @@ interface OrderPayload {
 export interface CreateOrderInput {
   user_id: number;
   delivery_details: string;
+  payment_receipt?: string;
 }
 
 export const createOrder = async (orderData: CreateOrderInput) => {
   return await transaction(async (connection) => {
     // 1. Create new order
     const [orderResult]: any = await connection.query(
-      `INSERT INTO orders (retailer_id, delivery_details, status)
-       VALUES (?, ?, 'pending')`,
-      [orderData.user_id, orderData.delivery_details]
+      `INSERT INTO orders (retailer_id, delivery_details, payment_receipt, status)
+       VALUES (?, ?, ?, 'pending')`,
+      [
+        orderData.user_id,
+        orderData.delivery_details || "",
+        orderData.payment_receipt || null,
+      ]
     );
 
     const orderId = orderResult.insertId;
@@ -74,7 +79,7 @@ export const createOrder = async (orderData: CreateOrderInput) => {
 
 export const getOrdersByUse01r = async (userId: number) => {
   const sql = `
-    SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
+    SELECT o.id as order_id, o.delivery_details, o.payment_receipt, o.status, o.created_at,
            oi.quantity, oi.price_at_order, oi.item_id
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
@@ -92,6 +97,7 @@ export const getOrdersByUse01r = async (userId: number) => {
         order_id: row.order_id,
         status: row.status,
         delivery_details: row.delivery_details,
+        payment_receipt: row.payment_receipt,
         created_at: row.created_at,
         total_quantity: 0,
         total_price: 0,
@@ -117,7 +123,7 @@ export const getOrdersByUse01r = async (userId: number) => {
 };
 export const getOrdersByUser = async (userId: number) => {
   const sql = `
-    SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
+    SELECT o.id as order_id, o.delivery_details, o.payment_receipt, o.status, o.created_at,
            oi.quantity, oi.price_at_order, oi.item_id
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
@@ -135,6 +141,7 @@ export const getOrdersByUser = async (userId: number) => {
         id: row.order_id, // Remap to match frontend
         status: row.status,
         delivery_details: row.delivery_details,
+        payment_receipt: row.payment_receipt,
         created_at: row.created_at,
         total_amount: 0, // Remap and rename for frontend
         items: [], // Keep if useful elsewhere
@@ -163,10 +170,11 @@ export const getOrdersByUser = async (userId: number) => {
 
 export const getAllOrders = async () => {
   const sql = `
-    SELECT o.id as order_id, o.delivery_details, o.status, o.created_at,
-           oi.quantity, oi.price_at_order, oi.item_id
+    SELECT o.id as order_id, o.delivery_details, o.payment_receipt, o.status, o.created_at,
+           oi.quantity, oi.price_at_order, oi.item_id, u.name AS customer, u.email AS customer_email
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
+    JOIN users u ON o.retailer_id = u.id
     ORDER BY o.created_at DESC
   `;
 
@@ -178,8 +186,12 @@ export const getAllOrders = async () => {
     if (!orders[row.order_id]) {
       orders[row.order_id] = {
         order_id: row.order_id,
+        id: row.order_id,
+        customer: row.customer,
+        customer_email: row.customer_email,
         status: row.status,
         delivery_details: row.delivery_details,
+        payment_receipt: row.payment_receipt,
         created_at: row.created_at,
         total_quantity: 0,
         total_price: 0,
@@ -218,7 +230,7 @@ export const getOrderById0 = async (orderId: number) => {
 export const getOrderById1 = async (orderId: number) => {
   // ADD ITEMS NAME & PRICE
   const sql = `
-    SELECT o.id as order_id, o.delivery_details, o.created_at, o.status,
+    SELECT o.id as order_id, o.delivery_details, o.payment_receipt, o.created_at, o.status,
            i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
@@ -234,6 +246,7 @@ export const getOrderById1 = async (orderId: number) => {
   const order = {
     order_id: rows[0].order_id,
     delivery_details: rows[0].delivery_details,
+    payment_receipt: rows[0].payment_receipt,
     created_at: rows[0].created_at,
     status: rows[0].status,
     items: [] as any[],
@@ -260,7 +273,7 @@ export const getOrderById1 = async (orderId: number) => {
 export const getOrderById = async (orderId: number) => {
   // Fetch order details with item names and current prices
   const sql = `
-    SELECT o.id as order_id, o.delivery_details, o.created_at, o.status,
+    SELECT o.id as order_id, o.delivery_details, o.payment_receipt, o.created_at, o.status,
            i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
@@ -276,6 +289,7 @@ export const getOrderById = async (orderId: number) => {
   const order = {
     id: rows[0].order_id, // Remap to match frontend expectations
     delivery_details: rows[0].delivery_details,
+    payment_receipt: rows[0].payment_receipt,
     created_at: rows[0].created_at,
     status: rows[0].status,
     total_amount: 0, // Remap and rename for frontend
@@ -306,6 +320,34 @@ export const updateOrderDelivery = async (
 ) => {
   const sql = `UPDATE orders SET delivery_details = ? WHERE id = ?`;
   return await query(sql, [delivery, orderId]);
+};
+
+export const updatePaymentReceipt = async (
+  orderId: number,
+  userId: number,
+  paymentReceipt: string,
+) => {
+  return await transaction(async (conn) => {
+    const [orders]: any = await conn.query(
+      `SELECT id, status FROM orders WHERE id = ? AND retailer_id = ?`,
+      [orderId, userId],
+    );
+
+    if (orders.length === 0) {
+      throw new AppError("Order not found", 404);
+    }
+
+    if (orders[0].status !== "pending") {
+      throw new AppError("Receipt can only be changed while order is pending", 400);
+    }
+
+    await conn.query(
+      `UPDATE orders SET payment_receipt = ? WHERE id = ? AND retailer_id = ?`,
+      [paymentReceipt, orderId, userId],
+    );
+
+    return { message: "Payment receipt updated", payment_receipt: paymentReceipt };
+  });
 };
 
 // update order status
@@ -370,11 +412,15 @@ export const updateOrderStatus2 = async (
   return await transaction(async (conn) => {
     // check if order exists
     const [order] = await conn.query<any[]>(
-      `SELECT id FROM orders WHERE id = ?`,
+      `SELECT id, payment_receipt FROM orders WHERE id = ?`,
       [orderId]
     );
     if (order.length === 0) {
       throw new AppError("Order not found", 404);
+    }
+
+    if ((status === "approved" || status === "paid") && !order[0].payment_receipt) {
+      throw new AppError("Payment receipt is required before approving an order", 400);
     }
     // 1. Update order status
     await conn.query(`UPDATE orders SET status = ? WHERE id = ?`, [

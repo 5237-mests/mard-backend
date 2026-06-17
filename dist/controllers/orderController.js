@@ -42,21 +42,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refundOrder = exports.deleteOrder = exports.removeOrderItem = exports.updateOrderItem = exports.updateOrderStatus2 = exports.updateStatus = exports.updateDelivery = exports.getById = exports.getByUser = exports.getAllOrders = exports.create = void 0;
+exports.refundOrder = exports.deleteOrder = exports.removeOrderItem = exports.updateOrderItem = exports.updateOrderStatus2 = exports.updateStatus = exports.updatePaymentReceipt = exports.updateDelivery = exports.getById = exports.getByUser = exports.getAllOrders = exports.create = void 0;
 const orderService = __importStar(require("../services/orderService"));
 const create = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
         const user_id = Number((_b = (_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
         const { delivery_details } = req.body;
+        const payment_receipt = req.file
+            ? `/uploads/receipts/${req.file.filename}`
+            : undefined;
         const result = yield orderService.createOrder({
             user_id,
             delivery_details,
+            payment_receipt,
         });
         res.status(201).json(Object.assign({ message: "Order created" }, result));
     }
     catch (error) {
-        res.status(500).json({ error: "Failed to create order" });
+        res
+            .status(error.message === "Cart is empty" ? 400 : 500)
+            .json({ error: error.message || "Failed to create order" });
     }
 });
 exports.create = create;
@@ -83,7 +89,7 @@ const getByUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getByUser = getByUser;
-// get order by id
+// get order by id.
 const getById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const orderId = Number(req.params.orderId);
@@ -107,6 +113,27 @@ const updateDelivery = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.updateDelivery = updateDelivery;
+const updatePaymentReceipt = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        const orderId = Number(req.params.orderId);
+        const userId = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
+        const paymentReceipt = req.file
+            ? `/uploads/receipts/${req.file.filename}`
+            : "";
+        if (!paymentReceipt) {
+            return res.status(400).json({ message: "Payment receipt is required" });
+        }
+        const result = yield orderService.updatePaymentReceipt(orderId, userId, paymentReceipt);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(error.statusCode || 500).json({
+            message: error.message || "Failed to update payment receipt",
+        });
+    }
+});
+exports.updatePaymentReceipt = updatePaymentReceipt;
 const updateStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { orderId, status } = req.params;

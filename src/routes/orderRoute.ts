@@ -5,12 +5,58 @@ import {
   authorizeRole,
   authorizeUser,
 } from "../middleware/authMiddleware";
+import multer from "multer";
+import path from "path";
+import fs from "fs/promises";
 
 const router = Router();
 
-router.post("/me", authenticateToken, authorizeUser, orderController.create);
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(
+      process.env.HOME || "/home/mardtryj",
+      "uploads/receipts",
+    );
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    } catch (err) {
+      cb(err as Error, uploadDir);
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
 
-// get order by userid
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedExt = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (
+      file.mimetype.startsWith("image/") ||
+      file.mimetype === "application/pdf" ||
+      allowedExt.includes(ext)
+    ) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+router.post(
+  "/me",
+  authenticateToken,
+  authorizeUser,
+  upload.single("payment_receipt"),
+  orderController.create,
+);
+
+// get order by userid.
 router.get("/me", authenticateToken, authorizeUser, orderController.getByUser);
 
 // get all orders for admin
@@ -22,6 +68,14 @@ router.get(
 );
 // router.get("/", authenticateToken, authorizeUser, orderController.getByUser);
 router.put("/:orderId", orderController.updateDelivery);
+
+router.patch(
+  "/:orderId/receipt",
+  authenticateToken,
+  authorizeUser,
+  upload.single("payment_receipt"),
+  orderController.updatePaymentReceipt,
+);
 
 router.get(
   "/:orderId",
@@ -67,7 +121,7 @@ router.delete("/:orderId", authenticateToken, orderController.deleteOrder);
 router.patch(
   "/:orderId/:status",
   authenticateToken,
-  authorizeUser,
+  authorizeRole(["ADMIN"]),
   orderController.updateOrderStatus2
 );
 

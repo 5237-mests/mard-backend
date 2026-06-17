@@ -58,7 +58,7 @@ class ItemController {
     const imageFile = req.file;
 
     if (!newItem || !newItem.name || !newItem.category_id) {
-      if (imageFile) await fs.unlink(imageFile.path).catch(() => {}); // Cleanup on errorr
+      if (imageFile) await fs.unlink(imageFile.path).catch(() => { }); // Cleanup on errorr
       return res.status(400).json({ error: "Invalid item data" });
     }
 
@@ -69,7 +69,7 @@ class ItemController {
       const itemService = new ItemService();
       const createdItem = await itemService.createItem(newItem);
       if (!createdItem) {
-        if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
+        if (imageFile) await fs.unlink(imageFile.path).catch(() => { });
         return res
           .status(400)
           .json({ error: "Item with the same name already exists" });
@@ -77,7 +77,7 @@ class ItemController {
       res.status(201).json(createdItem);
     } catch (error) {
       console.error("Error creating item:", error);
-      if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
+      if (imageFile) await fs.unlink(imageFile.path).catch(() => { });
       res.status(500).json({ error: "Failed to create item." });
     }
   }
@@ -136,20 +136,20 @@ class ItemController {
       });
 
       if (!result) {
-        if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
+        if (imageFile) await fs.unlink(imageFile.path).catch(() => { });
         return res.status(404).json({ error: "Item not found" });
       }
 
       // Delete old image if new one uploaded
       if (oldImagePath && imageFile) {
         const fullPath = path.join("public", oldImagePath);
-        await fs.unlink(fullPath).catch(() => {}); // Silent fail if not exists
+        await fs.unlink(fullPath).catch(() => { }); // Silent fail if not exists
       }
 
       res.json({ message: "Item updated successfully" });
     } catch (error) {
       console.error("Error updating item:", error);
-      if (imageFile) await fs.unlink(imageFile.path).catch(() => {});
+      if (imageFile) await fs.unlink(imageFile.path).catch(() => { });
       res.status(500).json({ error: "Failed to update item" });
     }
   }

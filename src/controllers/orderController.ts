@@ -5,13 +5,20 @@ export const create = async (req: Request, res: Response) => {
   try {
     const user_id = Number(req?.user?.user?.id);
     const { delivery_details } = req.body;
+    const payment_receipt = req.file
+      ? `/uploads/receipts/${req.file.filename}`
+      : undefined;
+
     const result = await orderService.createOrder({
       user_id,
       delivery_details,
+      payment_receipt,
     });
     res.status(201).json({ message: "Order created", ...result });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to create order" });
+  } catch (error: any) {
+    res
+      .status(error.message === "Cart is empty" ? 400 : 500)
+      .json({ error: error.message || "Failed to create order" });
   }
 };
 
@@ -35,7 +42,7 @@ export const getByUser = async (req: Request, res: Response) => {
   }
 };
 
-// get order by id
+// get order by id.
 export const getById = async (req: Request, res: Response) => {
   try {
     const orderId = Number(req.params.orderId);
@@ -54,6 +61,31 @@ export const updateDelivery = async (req: Request, res: Response) => {
     res.json({ message: "Delivery details updated" });
   } catch (error) {
     res.status(500).json({ error: "Failed to update delivery details" });
+  }
+};
+
+export const updatePaymentReceipt = async (req: Request, res: Response) => {
+  try {
+    const orderId = Number(req.params.orderId);
+    const userId = Number(req.user?.user?.id);
+    const paymentReceipt = req.file
+      ? `/uploads/receipts/${req.file.filename}`
+      : "";
+
+    if (!paymentReceipt) {
+      return res.status(400).json({ message: "Payment receipt is required" });
+    }
+
+    const result = await orderService.updatePaymentReceipt(
+      orderId,
+      userId,
+      paymentReceipt,
+    );
+    res.json(result);
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to update payment receipt",
+    });
   }
 };
 

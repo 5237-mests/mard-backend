@@ -89,6 +89,7 @@ app.use(express_1.default.static(clientBuildPath, {
 }));
 // --- Serve uploads ---
 app.use("/uploads", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/products")));
+app.use("/uploads/receipts", express_1.default.static(path_1.default.join(process.env.HOME || "/home/mardtryj", "uploads/receipts")));
 // --- API Routes ---..
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/users", userRoutes_1.default);
