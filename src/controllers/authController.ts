@@ -70,8 +70,7 @@ class AuthController {
     const authService = new AuthService();
     try {
       const user = await authService.loginUser(email, password);
-
-      // Generate short-lived access token (15 minutes)
+      // Generate short-lived access token
       const accessToken = jwt.sign(
         {
           userId: user.id,
@@ -161,12 +160,12 @@ class AuthController {
             name: user.name,
             email: user.email,
             role: user.role,
-            shopId: (user as any).shopId,
-            storeId: (user as any).storeId,
+            shopId: user.shop_id,
+            storeId: user.store_id,
           },
         },
         process.env.JWT_SECRET || "default_secret",
-        { expiresIn: "15m" },
+        { expiresIn: "150m" },
       );
 
       // Rotate refresh token (optional but recommended).

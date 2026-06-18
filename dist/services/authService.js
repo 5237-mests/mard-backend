@@ -115,10 +115,17 @@ class AuthService {
      */
     findUserById(id) {
         return __awaiter(this, void 0, void 0, function* () {
+            //   const sql = `
+            //   SELECT id, name, email, password, role, is_verified
+            //   FROM users 
+            //   WHERE id = ?
+            // `;
             const sql = `
-    SELECT id, name, email, password, role, is_verified
-    FROM users 
-    WHERE id = ?
+    SELECT u.*, ss.shop_id, sst.store_id
+    FROM users u
+    LEFT JOIN shop_shopkeepers ss ON u.id = ss.user_id
+    LEFT JOIN store_storekeepers sst ON u.id = sst.user_id
+    WHERE u.id = ?
   `;
             const users = yield (0, db_1.query)(sql, [id]);
             if (users.length === 0)

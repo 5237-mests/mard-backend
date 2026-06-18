@@ -120,13 +120,21 @@ export class AuthService {
    * Find user by ID
    */
   async findUserById(id: number): Promise<User | null> {
-    const sql = `
-    SELECT id, name, email, password, role, is_verified
-    FROM users 
-    WHERE id = ?
-  `;
-    const users = await query(sql, [id]);
+    //   const sql = `
+    //   SELECT id, name, email, password, role, is_verified
+    //   FROM users 
+    //   WHERE id = ?
+    // `;
 
+    const sql = `
+    SELECT u.*, ss.shop_id, sst.store_id
+    FROM users u
+    LEFT JOIN shop_shopkeepers ss ON u.id = ss.user_id
+    LEFT JOIN store_storekeepers sst ON u.id = sst.user_id
+    WHERE u.id = ?
+  `;
+
+    const users = await query(sql, [id]);
     if (users.length === 0) return null;
     return users[0] as User;
   }

@@ -70,7 +70,7 @@ class AuthController {
             const authService = new authService_1.AuthService();
             try {
                 const user = yield authService.loginUser(email, password);
-                // Generate short-lived access token (15 minutes)
+                // Generate short-lived access token
                 const accessToken = jsonwebtoken_1.default.sign({
                     userId: user.id,
                     user: {
@@ -146,10 +146,10 @@ class AuthController {
                         name: user.name,
                         email: user.email,
                         role: user.role,
-                        shopId: user.shopId,
-                        storeId: user.storeId,
+                        shopId: user.shop_id,
+                        storeId: user.store_id,
                     },
-                }, process.env.JWT_SECRET || "default_secret", { expiresIn: "15m" });
+                }, process.env.JWT_SECRET || "default_secret", { expiresIn: "150m" });
                 // Rotate refresh token (optional but recommended).
                 const newRefreshToken = jsonwebtoken_1.default.sign({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET || "refresh_secret", { expiresIn: "7d" });
                 res.cookie("refreshToken", newRefreshToken, {

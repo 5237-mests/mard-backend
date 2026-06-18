@@ -27,6 +27,8 @@ export interface User {
   verificationToken: string | null;
   created_at?: Date;
   updated_at?: Date;
+  shop_id?: string; // Added to include shop_id
+  store_id?: number; // Added to include store_id
 }
 
 // Brand interface
@@ -290,13 +292,13 @@ export interface Request {
   created_at?: Date;
   updated_at: string;
   details:
-    | NewProductRequest
-    | {
-        item_id: number;
-        name: string;
-        recommended_quantity: number;
-        reason?: string;
-      };
+  | NewProductRequest
+  | {
+    item_id: number;
+    name: string;
+    recommended_quantity: number;
+    reason?: string;
+  };
 }
 
 export interface RequestQuery {
