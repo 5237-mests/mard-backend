@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import * as orderService from "../services/orderService";
+import { CLIENT_RENEG_LIMIT } from "tls";
 
 export const create = async (req: Request, res: Response) => {
   try {
@@ -34,7 +35,6 @@ export const getAllOrders = async (req: Request, res: Response) => {
 export const getByUser = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.user?.user?.id);
-    // console.log("get o b u>", userId);
     const orders = await orderService.getOrdersByUser(userId);
     res.json(orders);
   } catch (error) {
@@ -100,21 +100,18 @@ export const updateStatus = async (req: Request, res: Response) => {
 };
 export const updateOrderStatus2 = async (req: Request, res: Response) => {
   try {
-    const sold_by_id = Number(req?.user?.user?.id);
+    const sellerId = Number(req?.user?.user?.id);
     const { orderId, status } = req.params;
-    const shop_id = 2;
-
-    if (!status || !shop_id || !sold_by_id) {
+    if (!status || !sellerId) {
       return res
         .status(400)
-        .json({ message: "status, shop_id and sold_by_id are required" });
+        .json({ message: "status, and sold_by_id are required" });
     }
 
     const result = await orderService.updateOrderStatus2(
       Number(orderId),
       status,
-      shop_id,
-      sold_by_id
+      sellerId
     );
     return res.json(result);
   } catch (error: any) {
@@ -130,7 +127,6 @@ export const updateOrderItem = async (req: Request, res: Response) => {
   try {
     const { orderId, itemId } = req.params;
     const { quantity } = req.body;
-    console.log("q", quantity);
     if (!quantity || quantity < 1) {
       return res.status(400).json({ message: "Quantity must be >= 1" });
     }
@@ -196,9 +192,7 @@ export const refundOrder = async (
   next: NextFunction
 ) => {
   try {
-    console.log("Order Id");
     const { orderId } = req.params;
-    console.log("Order Id", orderId);
     const result = await orderService.refundOrder(Number(orderId));
     res.json(result);
   } catch (error) {

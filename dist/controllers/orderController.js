@@ -80,7 +80,6 @@ const getByUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
         const userId = Number((_b = (_a = req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
-        // console.log("get o b u>", userId);
         const orders = yield orderService.getOrdersByUser(userId);
         res.json(orders);
     }
@@ -148,15 +147,14 @@ exports.updateStatus = updateStatus;
 const updateOrderStatus2 = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     try {
-        const sold_by_id = Number((_b = (_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
+        const sellerId = Number((_b = (_a = req === null || req === void 0 ? void 0 : req.user) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.id);
         const { orderId, status } = req.params;
-        const shop_id = 2;
-        if (!status || !shop_id || !sold_by_id) {
+        if (!status || !sellerId) {
             return res
                 .status(400)
-                .json({ message: "status, shop_id and sold_by_id are required" });
+                .json({ message: "status, and sold_by_id are required" });
         }
-        const result = yield orderService.updateOrderStatus2(Number(orderId), status, shop_id, sold_by_id);
+        const result = yield orderService.updateOrderStatus2(Number(orderId), status, sellerId);
         return res.json(result);
     }
     catch (error) {
@@ -172,7 +170,6 @@ const updateOrderItem = (req, res) => __awaiter(void 0, void 0, void 0, function
     try {
         const { orderId, itemId } = req.params;
         const { quantity } = req.body;
-        console.log("q", quantity);
         if (!quantity || quantity < 1) {
             return res.status(400).json({ message: "Quantity must be >= 1" });
         }
@@ -221,9 +218,7 @@ const deleteOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.deleteOrder = deleteOrder;
 const refundOrder = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("Order Id");
         const { orderId } = req.params;
-        console.log("Order Id", orderId);
         const result = yield orderService.refundOrder(Number(orderId));
         res.json(result);
     }

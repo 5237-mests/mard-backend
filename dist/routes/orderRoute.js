@@ -88,22 +88,23 @@ router.post("/me", authMiddleware_1.authenticateToken, authMiddleware_1.authoriz
 // get order by userid.
 router.get("/me", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, orderController.getByUser);
 // get all orders for admin
-router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), orderController.getAllOrders);
+router.get("/all", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), orderController.getAllOrders);
 // router.get("/", authenticateToken, authorizeUser, orderController.getByUser);
 router.put("/:orderId", orderController.updateDelivery);
 router.patch("/:orderId/receipt", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, upload.single("payment_receipt"), orderController.updatePaymentReceipt);
+// get order by order id.
 router.get("/:orderId", authMiddleware_1.authenticateToken, authMiddleware_1.authorizeUser, orderController.getById);
 // update order status
-router.put("/:orderId/:status", authMiddleware_1.authenticateToken, orderController.updateStatus);
+router.put("/:orderId/:status", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), authMiddleware_1.authorizeUser, orderController.updateStatus);
 // PUT /orders/:orderId/items/:itemId
 router.put("/:orderId/items/:itemId", authMiddleware_1.authenticateToken, orderController.updateOrderItem);
 // refund order
 // POST /orders/:orderId/refund
 router.post("/refund/:orderId", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), orderController.refundOrder);
 // DELETE /orders/:orderId/items/:itemId
-router.delete("/:orderId/items/:itemId", authMiddleware_1.authenticateToken, orderController.removeOrderItem);
+router.delete("/:orderId/items/:itemId", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), orderController.removeOrderItem);
 // DELETE /orders/:orderId
 router.delete("/:orderId", authMiddleware_1.authenticateToken, orderController.deleteOrder);
 // PATCH /orders/:id/status
-router.patch("/:orderId/:status", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN"]), orderController.updateOrderStatus2);
+router.patch("/:orderId/:status", authMiddleware_1.authenticateToken, (0, authMiddleware_1.authorizeRole)(["ADMIN", "SHOPKEEPER"]), authMiddleware_1.authorizeUser, orderController.updateOrderStatus2);
 exports.default = router;

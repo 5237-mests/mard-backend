@@ -270,11 +270,84 @@ export const getOrderById1 = async (orderId: number) => {
 
   return order;
 };
+
 export const getOrderById = async (orderId: number) => {
+  const sql = `
+    SELECT 
+      o.id,
+      o.retailer_id,
+      o.status,
+      o.delivery_details,
+      o.payment_receipt,
+      o.created_at,
+      o.updated_at,
+      o.updated_by,
+      u.name,
+      u.email,
+      u.phone,
+      i.name as item_name,
+      i.price as current_price,
+      oi.item_id,
+      oi.quantity,
+      oi.price_at_order,
+      updater.name as updated_by_name
+    FROM orders o 
+    JOIN order_items oi ON o.id = oi.order_id 
+    JOIN items i ON oi.item_id = i.id 
+    JOIN users u ON o.retailer_id = u.id
+    LEFT JOIN users updater ON o.updated_by = updater.id
+    WHERE o.id = ?
+  `;
+
+  const rows: any[] = await query(sql, [orderId]);
+
+  if (rows.length === 0) return null;
+
+  const firstRow = rows[0];
+
+  const order = {
+    id: firstRow.id,                    // ← Fixed
+    status: firstRow.status,
+    delivery_details: firstRow.delivery_details,
+    payment_receipt: firstRow.payment_receipt,
+    created_at: firstRow.created_at,
+    updated_at: firstRow.updated_at,    // Added
+    // updated_by: firstRow.updated_by,
+    updated_by: firstRow.updated_by_name,
+    total_amount: 0,
+    customer: {
+      id: firstRow.retailer_id,
+      name: firstRow.name,
+      email: firstRow.email,
+      phone: firstRow.phone,
+    },
+    items: [] as any[],
+  };
+
+  rows.forEach((row) => {
+    const itemTotal = row.quantity * row.price_at_order;
+
+    order.items.push({
+      item_id: row.item_id,
+      name: row.item_name,
+      quantity: row.quantity,
+      price_at_order: row.price_at_order,
+      current_price: row.current_price,
+      item_total: itemTotal,
+    });
+
+    order.total_amount += itemTotal;
+  });
+
+  return order;
+};
+
+export const getOrderById21 = async (orderId: number) => {
   // Fetch order details with item names and current prices
   // include user details
+  // include updated by
   const sql = `
-    SELECT o.id as order_id, retailer_id, u.name, u.email, u.phone, o.delivery_details, o.payment_receipt, o.created_at, o.status,
+    SELECT o.*, u.name, u.email, u.phone,
            i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
@@ -283,7 +356,6 @@ export const getOrderById = async (orderId: number) => {
     JOIN users u ON o.retailer_id = u.id
     WHERE o.id = ?
   `;
-
   const rows: any[] = await query(sql, [orderId]);
 
   if (rows.length === 0) return null;
@@ -294,6 +366,8 @@ export const getOrderById = async (orderId: number) => {
     payment_receipt: rows[0].payment_receipt,
     created_at: rows[0].created_at,
     status: rows[0].status,
+    updated_by: rows[0].updated_by,
+    updated_by_name: rows[0].updated_by_name,
     total_amount: 0,
     customer: {
       id: rows[0].retailer_id,
@@ -413,8 +487,7 @@ export const updateOrderStatus = async (orderId: number, status: string) => {
 export const updateOrderStatus2 = async (
   orderId: number,
   status: string,
-  shopId: number,
-  soldById: number
+  sellerId: number
 ) => {
   return await transaction(async (conn) => {
     // check if order exists
@@ -426,12 +499,21 @@ export const updateOrderStatus2 = async (
       throw new AppError("Order not found", 404);
     }
 
+    // use sellerId to get shopId from shopkeepers table
+    const [shopkeepers] = await conn.query<any[]>(
+      `SELECT shop_id FROM shop_shopkeepers WHERE user_id = ?`,
+      [sellerId]
+    );
+
+    const shopId = shopkeepers[0]?.shop_id;
+
     if ((status === "approved" || status === "paid") && !order[0].payment_receipt) {
       throw new AppError("Payment receipt is required before approving an order", 400);
     }
-    // 1. Update order status
-    await conn.query(`UPDATE orders SET status = ? WHERE id = ?`, [
+    // 1. Update order status and updated_by
+    await conn.query(`UPDATE orders SET status = ?, updated_by = ? WHERE id = ?`, [
       status,
+      sellerId,
       orderId,
     ]);
 
@@ -507,7 +589,7 @@ export const updateOrderStatus2 = async (
       const [saleResult]: any = await conn.query(
         `INSERT INTO sales (shop_id, sold_by_id, total_amount, customer_name, customer_contact, created_at)
    VALUES (?, ?, ?, ?, ?, NOW())`,
-        [shopId, soldById, totalAmount, customerName, customerContact]
+        [shopId, sellerId, totalAmount, customerName, customerContact]
       );
 
       const saleId = saleResult.insertId;

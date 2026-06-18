@@ -63,7 +63,7 @@ router.get("/me", authenticateToken, authorizeUser, orderController.getByUser);
 router.get(
   "/all",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "SHOPKEEPER"]),
   orderController.getAllOrders
 );
 // router.get("/", authenticateToken, authorizeUser, orderController.getByUser);
@@ -77,6 +77,7 @@ router.patch(
   orderController.updatePaymentReceipt,
 );
 
+// get order by order id.
 router.get(
   "/:orderId",
   authenticateToken,
@@ -88,6 +89,8 @@ router.get(
 router.put(
   "/:orderId/:status",
   authenticateToken,
+  authorizeRole(["ADMIN", "SHOPKEEPER"]),
+  authorizeUser,
   orderController.updateStatus
 );
 
@@ -111,6 +114,7 @@ router.post(
 router.delete(
   "/:orderId/items/:itemId",
   authenticateToken,
+  authorizeRole(["ADMIN", "SHOPKEEPER"]),
   orderController.removeOrderItem
 );
 
@@ -121,7 +125,8 @@ router.delete("/:orderId", authenticateToken, orderController.deleteOrder);
 router.patch(
   "/:orderId/:status",
   authenticateToken,
-  authorizeRole(["ADMIN"]),
+  authorizeRole(["ADMIN", "SHOPKEEPER"]),
+  authorizeUser,
   orderController.updateOrderStatus2
 );
 

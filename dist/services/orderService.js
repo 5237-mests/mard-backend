@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refundOrder = exports.deleteOrder = exports.removeOrderItem = exports.updateOrderItem = exports.updateOrderStatus2 = exports.updateOrderStatus = exports.updatePaymentReceipt = exports.updateOrderDelivery = exports.getOrderById = exports.getOrderById1 = exports.getOrderById0 = exports.getAllOrders = exports.getOrdersByUser = exports.getOrdersByUse01r = exports.createOrder = void 0;
+exports.refundOrder = exports.deleteOrder = exports.removeOrderItem = exports.updateOrderItem = exports.updateOrderStatus2 = exports.updateOrderStatus = exports.updatePaymentReceipt = exports.updateOrderDelivery = exports.getOrderById21 = exports.getOrderById = exports.getOrderById1 = exports.getOrderById0 = exports.getAllOrders = exports.getOrdersByUser = exports.getOrdersByUse01r = exports.createOrder = void 0;
 const db_1 = require("../config/db");
 const AppError_1 = __importDefault(require("../utils/AppError"));
 const createOrder = (orderData) => __awaiter(void 0, void 0, void 0, function* () {
@@ -222,10 +222,75 @@ const getOrderById1 = (orderId) => __awaiter(void 0, void 0, void 0, function* (
 });
 exports.getOrderById1 = getOrderById1;
 const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* () {
+    const sql = `
+    SELECT 
+      o.id,
+      o.retailer_id,
+      o.status,
+      o.delivery_details,
+      o.payment_receipt,
+      o.created_at,
+      o.updated_at,
+      o.updated_by,
+      u.name,
+      u.email,
+      u.phone,
+      i.name as item_name,
+      i.price as current_price,
+      oi.item_id,
+      oi.quantity,
+      oi.price_at_order,
+      updater.name as updated_by_name
+    FROM orders o 
+    JOIN order_items oi ON o.id = oi.order_id 
+    JOIN items i ON oi.item_id = i.id 
+    JOIN users u ON o.retailer_id = u.id
+    LEFT JOIN users updater ON o.updated_by = updater.id
+    WHERE o.id = ?
+  `;
+    const rows = yield (0, db_1.query)(sql, [orderId]);
+    if (rows.length === 0)
+        return null;
+    const firstRow = rows[0];
+    const order = {
+        id: firstRow.id, // ← Fixed
+        status: firstRow.status,
+        delivery_details: firstRow.delivery_details,
+        payment_receipt: firstRow.payment_receipt,
+        created_at: firstRow.created_at,
+        updated_at: firstRow.updated_at, // Added
+        // updated_by: firstRow.updated_by,
+        updated_by: firstRow.updated_by_name,
+        total_amount: 0,
+        customer: {
+            id: firstRow.retailer_id,
+            name: firstRow.name,
+            email: firstRow.email,
+            phone: firstRow.phone,
+        },
+        items: [],
+    };
+    rows.forEach((row) => {
+        const itemTotal = row.quantity * row.price_at_order;
+        order.items.push({
+            item_id: row.item_id,
+            name: row.item_name,
+            quantity: row.quantity,
+            price_at_order: row.price_at_order,
+            current_price: row.current_price,
+            item_total: itemTotal,
+        });
+        order.total_amount += itemTotal;
+    });
+    return order;
+});
+exports.getOrderById = getOrderById;
+const getOrderById21 = (orderId) => __awaiter(void 0, void 0, void 0, function* () {
     // Fetch order details with item names and current prices
     // include user details
+    // include updated by
     const sql = `
-    SELECT o.id as order_id, retailer_id, u.name, u.email, u.phone, o.delivery_details, o.payment_receipt, o.created_at, o.status,
+    SELECT o.*, u.name, u.email, u.phone,
            i.name as item_name, i.price as current_price,
            oi.item_id, oi.quantity, oi.price_at_order
     FROM orders o
@@ -243,6 +308,8 @@ const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* ()
         payment_receipt: rows[0].payment_receipt,
         created_at: rows[0].created_at,
         status: rows[0].status,
+        updated_by: rows[0].updated_by,
+        updated_by_name: rows[0].updated_by_name,
         total_amount: 0,
         customer: {
             id: rows[0].retailer_id,
@@ -266,7 +333,7 @@ const getOrderById = (orderId) => __awaiter(void 0, void 0, void 0, function* ()
     });
     return order;
 });
-exports.getOrderById = getOrderById;
+exports.getOrderById21 = getOrderById21;
 const updateOrderDelivery = (orderId, delivery) => __awaiter(void 0, void 0, void 0, function* () {
     const sql = `UPDATE orders SET delivery_details = ? WHERE id = ?`;
     return yield (0, db_1.query)(sql, [delivery, orderId]);
@@ -319,19 +386,24 @@ const updateOrderStatus = (orderId, status) => __awaiter(void 0, void 0, void 0,
     }));
 });
 exports.updateOrderStatus = updateOrderStatus;
-const updateOrderStatus2 = (orderId, status, shopId, soldById) => __awaiter(void 0, void 0, void 0, function* () {
+const updateOrderStatus2 = (orderId, status, sellerId) => __awaiter(void 0, void 0, void 0, function* () {
     return yield (0, db_1.transaction)((conn) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
         // check if order exists
         const [order] = yield conn.query(`SELECT id, payment_receipt FROM orders WHERE id = ?`, [orderId]);
         if (order.length === 0) {
             throw new AppError_1.default("Order not found", 404);
         }
+        // use sellerId to get shopId from shopkeepers table
+        const [shopkeepers] = yield conn.query(`SELECT shop_id FROM shop_shopkeepers WHERE user_id = ?`, [sellerId]);
+        const shopId = (_a = shopkeepers[0]) === null || _a === void 0 ? void 0 : _a.shop_id;
         if ((status === "approved" || status === "paid") && !order[0].payment_receipt) {
             throw new AppError_1.default("Payment receipt is required before approving an order", 400);
         }
-        // 1. Update order status
-        yield conn.query(`UPDATE orders SET status = ? WHERE id = ?`, [
+        // 1. Update order status and updated_by
+        yield conn.query(`UPDATE orders SET status = ?, updated_by = ? WHERE id = ?`, [
             status,
+            sellerId,
             orderId,
         ]);
         if (status === "approved" || status === "paid") {
@@ -376,7 +448,7 @@ const updateOrderStatus2 = (orderId, status, shopId, soldById) => __awaiter(void
             //   [shopId, soldById, totalAmount]
             // );
             const [saleResult] = yield conn.query(`INSERT INTO sales (shop_id, sold_by_id, total_amount, customer_name, customer_contact, created_at)
-   VALUES (?, ?, ?, ?, ?, NOW())`, [shopId, soldById, totalAmount, customerName, customerContact]);
+   VALUES (?, ?, ?, ?, ?, NOW())`, [shopId, sellerId, totalAmount, customerName, customerContact]);
             const saleId = saleResult.insertId;
             // 5. Insert sale_items
             for (const item of items) {
