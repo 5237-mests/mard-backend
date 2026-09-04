@@ -49,16 +49,14 @@ const connectDB = async (retries = 3, delay = 3000): Promise<void> => {
     try {
       const connection = await pool.getConnection();
       logger.info(
-        `MySQL Connected: ${getDatabaseConfig().host}:${
-          getDatabaseConfig().port
+        `MySQL Connected: ${getDatabaseConfig().host}:${getDatabaseConfig().port
         }`,
       );
       connection.release();
       return;
     } catch (error) {
       logger.error(
-        `DB connection attempt* ${attempt} failed: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `DB connection attempt* ${attempt} failed: ${error instanceof Error ? error.message : "Unknown error"
         }`,
       );
       if (attempt === retries) {
